@@ -67,27 +67,35 @@
 <body>
 
     <div class="invoice-box">
+<h3 class="text-center" style="font-family: Georgia, serif;">
+    {{ $admin->name ?? 'Admin Name Not Set' }}
+</h3>
 
-        <h3 class="text-center" style="font-family: Georgia, serif;">Vaibhav Shree Jewellers</h3>
-        <p class="text-center small">Elimgahat, Laheriasarai, Darbhanga</p>
+<p class="text-center small">
+    {{ $admin->address ?? 'Admin Address Not Set' }}
+</p>
+
 
         <hr style="border: 1px solid #000;">
 
         <h4 class="text-center" style="font-family: serif; margin-top: 5px;">INVOICE</h4>
 
-        <table>
-            <tr>
-                <td colspan="2"><strong>To:</strong><br>State Bank of India</td>
-                <td><strong>Date:</strong> {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d/m/Y') }}</td>
-            </tr>
-            <tr>
-                <td colspan="2"><strong>Branch:</strong> {{ $invoice->branch_name ?? '—' }}</td>
-                <td><strong>Ref No:</strong> {{ $invoice->invoice_no }}</td>
-            </tr>
-            <tr>
-                <td colspan="3"><strong>Customer Name:</strong> {{ $invoice->customer->brauser_name ?? '—' }}</td>
-            </tr>
-        </table>
+     <table>
+    <tr>
+        <td colspan="2"><strong>To:</strong><br>State Bank of India</td>
+        <td><strong>Date:</strong> {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d/m/Y') }}</td>
+    </tr>
+
+    <tr>
+        <td colspan="2"></td>
+        <td><strong>Ref No:</strong> {{ $invoice->invoice_no }}</td>
+    </tr>
+
+    <tr>
+        <td colspan="3"><strong>Customer Name:</strong> {{ $invoice->customer->brauser_name ?? '—' }}</td>
+    </tr>
+</table>
+
 
         <table class="text-center" style="margin-top: 10px;">
             <thead>

@@ -1,32 +1,110 @@
 @forelse ($invoices as $invoice)
     <tr>
-        <td>{{ $loop->iteration }}</td>
-        <td>{{ $invoice->invoice_no }}</td>
-        <td>{{ $invoice->customer->brauser_name ?? '-' }}</td>
-        <td>{{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d M, Y') }}</td>
-        <td>₹{{ number_format($invoice->total_amount, 2) }}</td>
-        <td>{{ $invoice->round_off ?? '0.00' }}</td>
-        <td>{{ $invoice->bank_name ?? '-' }}</td>
-        <td>{{ $invoice->ifsc_code ?? '-' }}</td>
-        <td>{{ $invoice->created_at?->format('d M, Y') }}</td>
+
+        {{-- Serial Number --}}
+        <td class="text-center text-muted">
+            {{ ($invoices->currentPage() - 1) * $invoices->perPage() + $loop->iteration }}
+        </td>
+
+        {{-- Invoice Number --}}
+        <td class="fw-bold text-dark">{{ $invoice->invoice_no }}</td>
+
+        {{-- Customer --}}
+        <td>
+            <div class="d-flex align-items-center">
+                <div class="avatar-xs bg-light rounded-circle text-primary d-flex align-items-center justify-content-center me-2"
+                    style="width: 24px; height: 24px;">
+                    <i class="ri-user-line fs-6"></i>
+                </div>
+                <span class="text-nowrap">{{ $invoice->customer->brauser_name ?? 'N/A' }}</span>
+            </div>
+        </td>
+
+        {{-- Invoice Date --}}
+        <td class="text-nowrap">
+            {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d M, Y') }}
+        </td>
+
+        {{-- Status --}}
         <td class="text-center">
-            {{-- ✅ This wrapper will force the buttons into a single line --}}
-            <div class="btn-group btn-group-sm se-2" role="group" aria-label="Invoice Actions">
-                <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="btn btn-outline-secondary" title="View">
+            @php
+                $status = strtolower($invoice->status ?? 'pending');
+                $colors = [
+                    'paid' => 'success',
+                    'overdue' => 'danger',
+                    'pending' => 'warning'
+                ];
+                $color = $colors[$status] ?? 'warning';
+            @endphp
+
+            <span class="badge bg-{{ $color }} bg-opacity-10 text-{{ $color }} px-2 py-1 rounded-pill border border-{{ $color }} border-opacity-25">
+                {{ ucfirst($invoice->status ?? 'Pending') }}
+            </span>
+        </td>
+
+        {{-- Total --}}
+        <td class="fw-medium text-dark text-end">
+            ₹{{ number_format($invoice->total_amount, 2) }}
+        </td>
+
+        {{-- Round Off --}}
+        <td class="text-muted text-end">
+            {{ number_format($invoice->round_off ?? 0, 2) }}
+        </td>
+
+        {{-- Bank --}}
+        <td>{{ $invoice->bank_name ?? '-' }}</td>
+
+        {{-- Created Date --}}
+        <td class="text-muted small text-nowrap">
+            {{ $invoice->created_at ? $invoice->created_at->format('d M, Y') : '-' }}
+        </td>
+
+        {{-- Actions --}}
+        <td class="text-center">
+            <div class="btn-group btn-group-sm">
+
+                {{-- View --}}
+                <a href="{{ route('admin.invoices.show', $invoice->id) }}" 
+                   class="btn btn-outline-secondary" title="View">
                     <i class="ri-eye-line"></i>
                 </a>
-                <a href="{{ route('admin.invoices.edit', $invoice->id) }}" class="btn btn-outline-primary" title="Edit">
+
+                {{-- Edit --}}
+                <a href="{{ route('admin.invoices.edit', $invoice->id) }}" 
+                   class="btn btn-outline-primary" title="Edit">
                     <i class="ri-edit-line"></i>
                 </a>
-                <button type="button" class="btn btn-outline-danger delete-invoice-btn" data-id="{{ $invoice->id }}"
-                    data-name="{{ $invoice->invoice_no }}" title="Delete">
+
+                {{-- Download --}}
+                <a href="{{ route('admin.invoices.download', $invoice->id) }}" 
+                   class="btn btn-outline-success" title="Download PDF">
+                    <i class="ri-download-line"></i>
+                </a>
+
+                {{-- Delete --}}
+                <button type="button"
+                        class="btn btn-outline-danger delete-invoice-btn"
+                        data-id="{{ $invoice->id }}"
+                        data-name="{{ $invoice->invoice_no }}"
+                        title="Delete">
                     <i class="ri-delete-bin-line"></i>
                 </button>
+
+            </div>
+        </td>
+
+    </tr>
+
+@empty
+
+    <tr>
+        <td colspan="10" class="text-center py-5">
+            <div class="d-flex flex-column align-items-center text-muted">
+                <i class="ri-inbox-line fs-2 mb-2"></i>
+                <span>No invoices found.</span>
             </div>
         </td>
     </tr>
-@empty
-    <tr>
-        <td colspan="10" class="text-center text-muted">No invoices found.</td>
-    </tr>
+
 @endforelse

@@ -12,12 +12,14 @@ use Illuminate\Support\Str;
 class InvoiceController extends Controller
 {
     /**
-     * Display a listing of invoices (Admin Wise)
+     * Display list (Admin Wise)
      */
     public function index(Request $request)
     {
+        $adminId = auth()->guard('admin')->id();
+
         $query = Invoice::with('customer')
-            ->where('admin_id', auth()->guard('admin')->id())  // ADMIN FILTER
+            ->where('admin_id', $adminId)
             ->latest();
 
         // 🔍 Search Filter
@@ -33,23 +35,23 @@ class InvoiceController extends Controller
             });
         }
 
-        // Filter by customer
+        // Filter by customer dropdown
         if ($request->filled('customer')) {
             $query->where('customer_id', $request->customer);
         }
 
         $invoices = $query->paginate(10);
 
-        // Only admin's customers
-        $customers = Customer::where('admin_id', auth()->guard('admin')->id())
+        // Admin-wise customers dropdown
+        $customers = Customer::where('admin_id', $adminId)
             ->select('id', 'brauser_name')
             ->get();
 
-        // AJAX request for live search
+        // AJAX Response
         if ($request->ajax()) {
             return response()->json([
-                'table' => view('admin.invoices.partials.table', compact('invoices'))->render(),
-                'pagination' => $invoices->links('pagination::bootstrap-5')->toHtml()
+                'table_html' => view('admin.invoices.partials.table', compact('invoices'))->render(),
+                'pagination_html' => $invoices->links('pagination::bootstrap-5')->toHtml(),
             ]);
         }
 
@@ -57,24 +59,26 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Show invoice create page
+     * Show Create Page
      */
     public function create()
     {
-        // Only admin’s customers
-        $customers = Customer::where('admin_id', auth()->guard('admin')->id())
+        $adminId = auth()->guard('admin')->id();
+
+        $customers = Customer::where('admin_id', $adminId)
             ->select('id', 'brauser_name')
             ->get();
 
-        // Unique Invoice Number (ADMIN WISE)
+        // Generate invoice number
         $prefix = 'VSJ/SBI/DAR/';
         $datePart = now()->format('ymd');
 
-        $lastInvoice = Invoice::where('admin_id', auth()->guard('admin')->id())
+        $lastInvoice = Invoice::where('admin_id', $adminId)
             ->latest('id')
             ->first();
 
         $nextId = $lastInvoice ? $lastInvoice->id + 1 : 1;
+
         $invoiceNo = $prefix . $datePart . '-' . $nextId;
 
         return view('admin.invoices.create', [
@@ -84,7 +88,7 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Store invoice
+     * Store Invoice
      */
     public function store(Request $request)
     {
@@ -102,7 +106,7 @@ class InvoiceController extends Controller
         ]);
 
         $data = $request->all();
-        $data['admin_id'] = auth()->guard('admin')->id(); // SAVE ADMIN ID
+        $data['admin_id'] = auth()->guard('admin')->id();
 
         Invoice::create($data);
 
@@ -111,14 +115,15 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Edit invoice
+     * Edit
      */
     public function edit($id)
     {
-        $invoice = Invoice::where('admin_id', auth()->guard('admin')->id())
-            ->findOrFail($id);
+        $adminId = auth()->guard('admin')->id();
 
-        $customers = Customer::where('admin_id', auth()->guard('admin')->id())
+        $invoice = Invoice::where('admin_id', $adminId)->findOrFail($id);
+
+        $customers = Customer::where('admin_id', $adminId)
             ->select('id', 'brauser_name')
             ->get();
 
@@ -126,12 +131,13 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Update invoice
+     * Update
      */
     public function update(Request $request, $id)
     {
-        $invoice = Invoice::where('admin_id', auth()->guard('admin')->id())
-            ->findOrFail($id);
+        $adminId = auth()->guard('admin')->id();
+
+        $invoice = Invoice::where('admin_id', $adminId)->findOrFail($id);
 
         $request->validate([
             'customer_id'     => 'required|exists:customers,id',
@@ -147,7 +153,7 @@ class InvoiceController extends Controller
         ]);
 
         $data = $request->all();
-        $data['admin_id'] = auth()->guard('admin')->id();
+        $data['admin_id'] = $adminId;
 
         $invoice->update($data);
 
@@ -156,44 +162,54 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Delete invoice
+     * Delete
      */
     public function destroy($id)
     {
-        $invoice = Invoice::where('admin_id', auth()->guard('admin')->id())
-            ->findOrFail($id);
+        $adminId = auth()->guard('admin')->id();
+
+        $invoice = Invoice::where('admin_id', $adminId)->findOrFail($id);
 
         $invoice->delete();
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Invoice deleted successfully.'
+        ]);
     }
 
     /**
-     * Show Invoice Details
+     * Show Invoice
      */
     public function show($id)
     {
-        $invoice = Invoice::where('admin_id', auth()->guard('admin')->id())
+        $adminId = auth()->guard('admin')->id();
+
+        $invoice = Invoice::where('admin_id', $adminId)
             ->with('customer')
             ->findOrFail($id);
 
-        return view('admin.invoices.show', compact('invoice'));
+        $admin = auth('admin')->user();
+
+        return view('admin.invoices.show', compact('invoice', 'admin'));
     }
 
     /**
-     * Download Invoice PDF
+     * Download PDF
      */
     public function downloadPDF($id)
     {
-        $invoice = Invoice::where('admin_id', auth()->guard('admin')->id())
+        $adminId = auth()->guard('admin')->id();
+
+        $invoice = Invoice::where('admin_id', $adminId)
             ->with('customer')
             ->findOrFail($id);
 
-        // Clean filename
-        $safeInvoiceNo = Str::slug($invoice->invoice_no, '_');
-        $fileName = 'Invoice_' . $safeInvoiceNo . '.pdf';
+        $admin = auth('admin')->user();
 
-        $pdf = Pdf::loadView('admin.invoices.pdf', compact('invoice'))
+        $fileName = 'Invoice_' . Str::slug($invoice->invoice_no, '_') . '.pdf';
+
+        $pdf = Pdf::loadView('admin.invoices.pdf', compact('invoice', 'admin'))
             ->setPaper('A4', 'portrait');
 
         return $pdf->download($fileName);

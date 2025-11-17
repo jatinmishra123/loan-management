@@ -7,6 +7,7 @@ use App\Models\Bank;
 use App\Models\Branch;
 use App\Models\Agent;
 use App\Models\GoldPrice;
+use App\Models\AppraisalRecord;   // ⭐ ADD THIS
 
 class DashboardController extends Controller
 {
@@ -14,9 +15,7 @@ class DashboardController extends Controller
     {
         $adminId = auth('admin')->id();
 
-        // --------------------------------------
-        // 📊 Dashboard Stats (Admin-wise)
-        // --------------------------------------
+        // 📊 Dashboard Stats
         $stats = [
             'total_banks'      => Bank::where('admin_id', $adminId)->count(),
             'total_branches'   => Branch::where('admin_id', $adminId)->count(),
@@ -27,28 +26,22 @@ class DashboardController extends Controller
             'active_agents'    => Agent::where('admin_id', $adminId)->where('is_active', 1)->count(),
         ];
 
-        // --------------------------------------
-        // 🏦 Recent Branches (Admin-wise)
-        // --------------------------------------
+        // 🏦 Recent Branches
         $recentBranches = Branch::with('bank')
             ->where('admin_id', $adminId)
             ->latest()
             ->limit(10)
             ->get();
 
-        // --------------------------------------
-        // 👨‍💼 Recent Agents (Admin-wise)
-        // --------------------------------------
+        // 👨‍💼 Recent Agents
         $recentAgents = Agent::with(['bank', 'branch'])
             ->where('admin_id', $adminId)
             ->latest()
             ->limit(10)
             ->get();
 
-        // --------------------------------------
-        // 🟡 Gold Price (GLOBAL – same for all admins)
-        // --------------------------------------
-        $latestPrice = GoldPrice::latest()->first();  // ❗ No admin filter
+        // 🟡 Gold Price (global)
+        $latestPrice = GoldPrice::latest()->first();
 
         if (!$latestPrice) {
             $latestPrice = (object) [
@@ -57,14 +50,22 @@ class DashboardController extends Controller
             ];
         }
 
-        // --------------------------------------
-        // 📤 Return View
-        // --------------------------------------
+        // 📄 ⭐ Recent Appraisal Records (Admin-wise)
+        $appraisalHistory = AppraisalRecord::with('customer')
+            ->whereHas('customer', function ($q) use ($adminId) {
+                $q->where('admin_id', $adminId);
+            })
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        // Return view
         return view('admin.dashboard', compact(
             'stats',
             'recentBranches',
             'recentAgents',
-            'latestPrice'
+            'latestPrice',
+            'appraisalHistory'   // ⭐ ADD THIS TO VIEW
         ));
     }
 }

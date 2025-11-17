@@ -43,7 +43,8 @@
                         {{-- Description --}}
                         <div class="col-md-6">
                             <label class="form-label">Gold Item Description <span class="text-danger">*</span></label>
-                            <input type="text" name="description" class="form-control @error('description') is-invalid @enderror"
+                            <input type="text" name="description" placeholder="Enter gold item name or details"
+                                   class="form-control @error('description') is-invalid @enderror"
                                    value="{{ old('description') }}" required>
                             @error('description')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -53,8 +54,8 @@
                         {{-- Quantity --}}
                         <div class="col-md-4">
                             <label class="form-label">Quantity <span class="text-danger">*</span></label>
-                            <input type="number" name="quantity" min="1"
-                                   class="form-control @error('quantity') is-invalid @enderror"
+                            <input type="number" name="quantity" placeholder="e.g. 1"
+                                   min="1" class="form-control @error('quantity') is-invalid @enderror"
                                    value="{{ old('quantity', 1) }}" required>
                             @error('quantity')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -64,7 +65,7 @@
                         {{-- Gross Weight --}}
                         <div class="col-md-4">
                             <label class="form-label">Gross Weight (g) <span class="text-danger">*</span></label>
-                            <input type="number" name="gross_weight" step="0.01"
+                            <input type="number" name="gross_weight" id="gross_weight" step="0.01" placeholder="e.g. 12.50"
                                    class="form-control @error('gross_weight') is-invalid @enderror"
                                    value="{{ old('gross_weight') }}" required>
                             @error('gross_weight')
@@ -74,32 +75,41 @@
 
                         {{-- Stone Weight --}}
                         <div class="col-md-4">
-                            <label class="form-label">Stone Weight (g) <span class="text-danger">*</span></label>
-                            <input type="number" name="stone_weight" step="0.01"
+                            <label class="form-label">Stone Weight (g)</label>
+                            <input type="number" name="stone_weight" id="stone_weight" step="0.01" placeholder="e.g. 0.25"
                                    class="form-control @error('stone_weight') is-invalid @enderror"
-                                   value="{{ old('stone_weight') }}" required>
+                                   value="{{ old('stone_weight') }}">
                             @error('stone_weight')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                        </div>
+
+                        {{-- Net Weight (Auto) --}}
+                        <div class="col-md-4">
+                            <label class="form-label">Net Weight (g)</label>
+                            <input type="number" name="net_weight" id="net_weight" step="0.01"
+                                   placeholder="Auto calculated"
+                                   class="form-control" readonly>
                         </div>
 
                         {{-- Purity --}}
                         <div class="col-md-4">
                             <label class="form-label">Purity (Carat) <span class="text-danger">*</span></label>
                             <input type="number" name="purity" id="purity" min="1" max="24"
+                                   placeholder="e.g. 22"
                                    class="form-control @error('purity') is-invalid @enderror"
-                                   value="{{ old('purity') }}" placeholder="e.g. 22" required>
+                                   value="{{ old('purity') }}" required>
                             @error('purity')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        {{-- Rate Per Gram --}}
+                        {{-- Rate Per Gram (Auto) --}}
                         <div class="col-md-4">
-                            <label class="form-label">Rate per Gram (₹) <span class="text-danger">*</span></label>
+                            <label class="form-label">Rate per Gram (₹)</label>
                             <input type="number" step="0.01" name="rate_per_gram" id="rate_per_gram"
-                                   class="form-control @error('rate_per_gram') is-invalid @enderror"
-                                   value="{{ old('rate_per_gram') }}" readonly required>
+                                   placeholder="Auto calculated" readonly
+                                   class="form-control @error('rate_per_gram') is-invalid @enderror">
                             @error('rate_per_gram')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -110,11 +120,9 @@
                             <label class="form-label">Gold Item Image</label>
                             <input type="file" name="image" accept="image/*" id="imageInput"
                                    class="form-control @error('image') is-invalid @enderror">
-
                             @error('image')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-
                             <div class="mt-2 text-center">
                                 <img id="imagePreview" src="#" style="display:none; width:140px; height:140px; object-fit:cover;"
                                      class="border rounded">
@@ -124,7 +132,7 @@
                         {{-- Remarks --}}
                         <div class="col-12">
                             <label class="form-label">Remarks</label>
-                            <textarea name="remarks" rows="3"
+                            <textarea name="remarks" rows="3" placeholder="Enter any notes or additional remarks"
                                       class="form-control @error('remarks') is-invalid @enderror">{{ old('remarks') }}</textarea>
                             @error('remarks')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -152,54 +160,50 @@
 </div>
 @endsection
 
-
 @push('scripts')
 <script>
-    // -------------------------------------------
-    // IMAGE PREVIEW
-    // -------------------------------------------
-    document.getElementById('imageInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const preview = document.getElementById('imagePreview');
+document.addEventListener('DOMContentLoaded', function () {
+    
+    let basePrice = 0;
 
-        if (file) {
-            preview.src = URL.createObjectURL(file);
-            preview.style.display = 'block';
+    // Fetch latest gold base price
+    fetch(`{{ route('admin.goldprice.latest') }}`)
+        .then(res => res.json())
+        .then(data => basePrice = parseFloat(data.price ?? 0));
+
+    const gross = document.getElementById('gross_weight');
+    const stone = document.getElementById('stone_weight');
+    const net = document.getElementById('net_weight');
+    const purity = document.getElementById('purity');
+    const rate = document.getElementById('rate_per_gram');
+
+    // Calculate Net Weight
+    function updateNetWeight() {
+        const g = parseFloat(gross.value) || 0;
+        const s = parseFloat(stone.value) || 0;
+
+        if (g > 0) {
+            net.value = (g - s).toFixed(2);
         } else {
-            preview.style.display = 'none';
+            net.value = "";
         }
-    });
+    }
 
+    // Calculate Rate per Gram
+    function updateRate() {
+        const p = parseFloat(purity.value) || 0;
 
-    // -------------------------------------------
-    // GOLD PRICE AUTO CALCULATION
-    // -------------------------------------------
-    document.addEventListener('DOMContentLoaded', function () {
-        let basePrice = 0;
+        if (p > 0 && p <= 24 && basePrice > 0) {
+            rate.value = ((basePrice * p) / 24).toFixed(2);
+        } else {
+            rate.value = "";
+        }
+    }
 
-        // Fetch latest gold base price
-        fetch(`{{ route('admin.goldprice.latest') }}`)
-            .then(res => res.json())
-            .then(data => {
-                basePrice = parseFloat(data.price ?? 0);
-            })
-            .catch(() => {
-                basePrice = 0;
-            });
-
-        const purityInput = document.getElementById('purity');
-        const rateInput = document.getElementById('rate_per_gram');
-
-        purityInput.addEventListener('input', function () {
-            const purity = parseFloat(this.value ?? 0);
-
-            if (purity > 0 && purity <= 24 && basePrice > 0) {
-                const rate = (basePrice * purity) / 24;
-                rateInput.value = rate.toFixed(2);
-            } else {
-                rateInput.value = "";
-            }
-        });
-    });
+    // Listeners
+    gross.addEventListener('input', () => { updateNetWeight(); updateRate(); });
+    stone.addEventListener('input', () => { updateNetWeight(); updateRate(); });
+    purity.addEventListener('input', updateRate);
+});
 </script>
 @endpush

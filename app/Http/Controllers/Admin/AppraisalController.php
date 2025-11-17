@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\AppraisalRecord;
 use Illuminate\Http\Request;
 use PDF;
+use Carbon\Carbon;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class AppraisalController extends Controller
@@ -29,7 +31,7 @@ class AppraisalController extends Controller
 
 
     /**
-     * ✔ Return correct blade based on appraisal type
+     * Return correct view file
      */
     private function getViewFile($type)
     {
@@ -40,7 +42,7 @@ class AppraisalController extends Controller
 
 
     /**
-     * ✔ Format Bank Name
+     * Format Bank Name
      */
     private function formatBankName($bankName)
     {
@@ -51,63 +53,25 @@ class AppraisalController extends Controller
         $name = strtolower(trim($bankName));
 
         $aliases = [
-
-            // SBI
-            'State Bank Of India' => ['sbi', 's.b.i', 'state bank', 'state bank india'],
-
-            // BANK OF BARODA
-            'Bank Of Baroda' => ['bob', 'b.o.b', 'bank of baroda'],
-
-            // PNB
-            'Punjab National Bank' => ['pnb', 'punjab national'],
-
-            // HDFC
-            'HDFC Bank' => ['hdfc'],
-
-            // ICICI
-            'ICICI Bank' => ['icici'],
-
-            // AXIS
-            'Axis Bank' => ['axis', 'axisbank'],
-
-            // UNION BANK
-            'Union Bank Of India' => ['ubi', 'union bank'],
-
-            // CANARA
-            'Canara Bank' => ['canara'],
-
-            // CENTRAL BANK
-            'Central Bank Of India' => ['cbi', 'central bank'],
-
-            // BANK OF INDIA
-            'Bank Of India' => ['boi'],
-
-            // INDIAN BANK
-            'Indian Bank' => ['indian bank'],
-
-            // UCO BANK
-            'UCO Bank' => ['uco', 'uco bank'],
-
-            // IDBI
-            'IDBI Bank' => ['idbi'],
-
-            // KOTAK
-            'Kotak Mahindra Bank' => ['kotak'],
-
-            // YES BANK
-            'Yes Bank' => ['yes bank', 'yesbank'],
-
-            // FEDERAL
-            'Federal Bank' => ['federal'],
-
-            // INDUSIND
-            'IndusInd Bank' => ['indusind'],
-
-            // SOUTH INDIAN BANK
-            'South Indian Bank' => ['sib'],
-
-            // RBL
-            'RBL Bank' => ['rbl', 'ratnakar']
+            'State Bank Of India'     => ['sbi', 's.b.i', 'state bank', 'state bank india'],
+            'Bank Of Baroda'          => ['bob', 'b.o.b', 'bank of baroda'],
+            'Punjab National Bank'    => ['pnb', 'punjab national'],
+            'HDFC Bank'               => ['hdfc'],
+            'ICICI Bank'              => ['icici'],
+            'Axis Bank'               => ['axis', 'axisbank'],
+            'Union Bank Of India'     => ['ubi', 'union bank'],
+            'Canara Bank'             => ['canara'],
+            'Central Bank Of India'   => ['cbi', 'central bank'],
+            'Bank Of India'           => ['boi'],
+            'Indian Bank'             => ['indian bank'],
+            'UCO Bank'                => ['uco'],
+            'IDBI Bank'               => ['idbi'],
+            'Kotak Mahindra Bank'     => ['kotak'],
+            'Yes Bank'                => ['yes bank', 'yesbank'],
+            'Federal Bank'            => ['federal'],
+            'IndusInd Bank'           => ['indusind'],
+            'South Indian Bank'       => ['sib'],
+            'RBL Bank'                => ['rbl', 'ratnakar']
         ];
 
         foreach ($aliases as $main => $list) {
@@ -121,7 +85,7 @@ class AppraisalController extends Controller
 
 
     /**
-     * ✔ QR Code Generator
+     * QR Code Generator
      */
     private function buildQr(Customer $customer, $type)
     {
@@ -142,7 +106,7 @@ class AppraisalController extends Controller
 
 
     /**
-     * ✔ Gold Items Filtering (Range)
+     * Gold Items Filtering (Range)
      */
     private function filterItems($items)
     {
@@ -159,7 +123,7 @@ class AppraisalController extends Controller
 
 
     /**
-     * ✔ AJAX — Load Certificate HTML (with correct blade)
+     * AJAX — Load Certificate HTML
      */
     public function getData($customerId, $type)
     {
@@ -173,7 +137,7 @@ class AppraisalController extends Controller
         $bankName = $this->formatBankName($customer->bank->bank ?? null);
         $qrCode   = $this->buildQr($customer, $type);
 
-        $view = $this->getViewFile($type); // ← Auto-switch between Appraisal 1 & 2
+        $view = $this->getViewFile($type);
 
         return view($view, [
             'customer' => $customer,
@@ -187,7 +151,7 @@ class AppraisalController extends Controller
 
 
     /**
-     * ✔ PDF Download (with correct blade)
+     * PDF Download + Save to appraisal_records table
      */
     public function downloadPdf($customerId, $type)
     {
@@ -203,6 +167,20 @@ class AppraisalController extends Controller
 
         $view = $this->getViewFile($type);
 
+        /**
+         * ✅ SAVE RECORD IN appraisal_records
+         */
+        AppraisalRecord::create([
+            'customer_id'        => $customerId,
+            'gold_items_snapshot'=> json_encode($items),
+            'total_value'        => $items->sum('value'),
+            'status'             => $type,
+            'downloaded_at'      => Carbon::now()
+        ]);
+
+        /**
+         * Generate PDF
+         */
         $pdf = PDF::loadView($view, [
             'customer' => $customer,
             'type'     => $type,
@@ -216,4 +194,32 @@ class AppraisalController extends Controller
 
         return $pdf->download($file);
     }
+    public function downloadAgain($id)
+{
+    $record = \App\Models\AppraisalRecord::with('customer')->findOrFail($id);
+
+    // Gold items
+    $items = collect(json_decode($record->gold_items_snapshot, true));
+
+    // PDF filename
+    $file = $record->customer->brauser_name . '_' . str_replace(' ', '_', $record->status) . '.pdf';
+
+    // IMPORTANT: Detect correct view
+    $view = strtolower($record->status) === 'appraisal 2'
+        ? 'admin.appraisal.certificate2'
+        : 'admin.appraisal.certificate';
+
+    // Generate PDF Again
+    $pdf = \PDF::loadView($view, [
+        'customer' => $record->customer,
+        'items'    => $items,
+        'type'     => $record->status,
+        'admin'    => auth('admin')->user(),
+        'bankName' => '',          // optional
+        'qrCode'   => ''           // optional
+    ])->setPaper('a4', 'portrait');
+
+    return $pdf->download($file);
+}
+
 }

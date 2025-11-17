@@ -35,29 +35,29 @@
             font-size: 14px;
         }
 
-        /* --- NEW STYLES FOR HEADER ALIGNMENT --- */
         .header-meta-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start; /* Aligns items to the top */
+            width: 100%;
             margin-top: 8px;
         }
 
-        .meta-left {
-            text-align: left;
+        /* Using Table for Header Meta to ensure PDF compatibility */
+        .meta-table {
+            width: 100%;
+            border: none;
+            margin-bottom: 10px;
+        }
+        .meta-table td {
+            border: none;
+            vertical-align: top;
+            padding: 0;
         }
 
-        .meta-right {
-            text-align: right;
-        }
-        /* --- END NEW STYLES --- */
-        
         .title {
             text-align: center;
             font-size: 16px;
             font-weight: bold;
             text-decoration: underline;
-            margin: 0 0 8px 0; /* <-- *** Corrected: Top margin set to 0 *** */
+            margin: 0 0 8px 0;
         }
 
         table {
@@ -79,20 +79,18 @@
             font-weight: bold;
         }
 
-        /* --- Corrected: Replaced flex .signature-block with table for PDF compatibility --- */
         .signature-table {
             width: 100%;
             border: 0;
-            margin-top: 25px; /* Added margin for space */
+            margin-top: 25px;
             font-size: 12px;
-            page-break-inside: avoid; /* Try to prevent breaking table across pages */
+            page-break-inside: avoid;
         }
         .signature-table td {
             width: 50%;
             border: 0;
-            vertical-align: top; /* Align content to the top */
+            vertical-align: top;
         }
-        /* --- End Correction --- */
 
         .footer-line {
             text-align: right;
@@ -103,12 +101,17 @@
 
         .qr-box {
             text-align: right;
-            margin-bottom: 5px; /* Added margin for spacing */
+            margin-bottom: 5px;
         }
 
         .qr-box img {
             width: 90px;
             height: 90px;
+        }
+        
+        /* Helper to remove borders from layout tables */
+        .no-border {
+            border: none !important;
         }
     </style>
 </head>
@@ -122,68 +125,52 @@
             <div>Appraiser Bank A/c - {{ $admin->account_number ?? 'N/A' }}</div>
         </div>
 
-        {{-- --- CORRECTED HEADER/META SECTION --- --}}
-        <div class="header-meta-container">
-            {{-- Left Side --}}
-            <div class="meta-left">
-                
-                <div>Annexure: PL-61(i)</div>
-
-                {{-- --- *** YAHAN PAR AAPKA NAYA REFERENCE CODE HAI *** --- --}}
-                <div style="margin-top: 10px;">
-                    @php
-                        // 1. Admin: Admin ke naam se 3 capital letters
-$refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) => substr($w, 0, 1))->implode(''));
-                        
-                        // 2. Bank: Bank ke naam se 3 capital letters
-                        $refBank = strtoupper(substr($customer->bank?->bank ?? 'BANK', 0, 3));
-
-                        // 3. Branch: Branch ke naam se 3 capital letters
-                        $refBranch = strtoupper(substr($customer->branch?->branch_name ?? 'BRANCH', 0, 3));
-
-                        // 4. Account: Account se 3 digits
-                        $refAccount = substr($customer->account_number ?? 'N/A', 0, 3);
-                    @endphp
-
-                    Ref :-
-                    {{ $refAdmin }}/
-                    {{ $refBank }}/
-                    {{ $refBranch }}/
-                    {{ $refAccount }}
-                </div>
-                 {{-- --- *** END CORRECTION *** --- --}}
-            </div>
-
-            {{-- Right Side --}}
-            <div class="meta-right">
-                <div class="qr-box">
-                    <img src="data:image/png;base64,{{ $qrCode }}" alt="QR Code">
-                </div>
-                <div>Date :-
-                    {{ $customer->date ? \Carbon\Carbon::parse($customer->date)->format('d/m/Y') : date('d/m/Y') }}
-                </div>
-            </div>
-        </div>
-        {{-- --- END CORRECTION --- --}}
-
+        {{-- --- HEADER META SECTION (Using Table for Layout) --- --}}
+        <table class="meta-table">
+            <tr>
+                <td style="text-align: left; width: 60%;">
+                    <div>Annexure: PL-61(i)</div>
+                    <div style="margin-top: 10px;">
+                        @php
+                            $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) => substr($w, 0, 1))->implode(''));
+                            $refBank = strtoupper(substr($customer->bank?->bank ?? 'BANK', 0, 3));
+                            $refBranch = strtoupper(substr($customer->branch?->branch_name ?? 'BRANCH', 0, 3));
+                            $refAccount = substr($customer->account_number ?? 'N/A', 0, 3);
+                        @endphp
+                        Ref :- {{ $refAdmin }}/{{ $refBank }}/{{ $refBranch }}/{{ $refAccount }}
+                    </div>
+                </td>
+                <td style="text-align: right; width: 40%;">
+                    <div class="qr-box">
+                        <img src="data:image/png;base64,{{ $qrCode }}" alt="QR Code">
+                    </div>
+                    <div>Date :- {{ $customer->date ? \Carbon\Carbon::parse($customer->date)->format('d/m/Y') : date('d/m/Y') }}</div>
+                </td>
+            </tr>
+        </table>
         
         <div class="title">APPRAISER CERTIFICATE</div>
 
-        <p style="text-align:justify; margin: 5px 0;">
+        <div style="text-align:justify; margin: 5px 0;">
             The Branch Manager<br>
 
-            {{-- --- *** Bank name formatting (SBI to State Bank of India) *** --- --}}
-            <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                <span>{{ $bankName }}</span>
-
-                <span>A/c No.: {{ $customer->account_number ?? '—' }}</span>
-            </div>
+            {{-- --- *** FIXED SECTION START *** --- --}}
+            {{-- Using a layout table with border:none to force alignment in PDF --}}
+            <table style="width: 100%; margin-top: 2px; margin-bottom: 2px; border: none;">
+                <tr>
+                    <td style="border: none; text-align: left; padding: 0; font-weight: bold; width: 60%;">
+                        {{ $bankName }}
+                    </td>
+                    <td style="border: none; text-align: right; padding: 0; font-weight: bold; width: 40%;">
+                        A/c No.: {{ $customer->account_number ?? '—' }}
+                    </td>
+                </tr>
+            </table>
+            {{-- --- *** FIXED SECTION END *** --- --}}
             
-            {{-- --- Branch name formatting (first letter capital) --- --}}
             <div>{{ ucwords(strtolower($customer->branch->branch_address ?? 'Branch Name Not Available')) }} </div>
             <br>
-            {{-- --- END CORRECTION --- --}}
-
+            
             Dear Sir,<br>
             I hereby certify that Sri/Smt. <b>{{ $customer->brauser_name }}</b> S/W/D of
             <b>{{ $customer->ralative_name ?? '—' }}</b> Resident of
@@ -196,7 +183,7 @@ $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) 
             <b>{{ $customer->cash_incharge ?? 'Cash Officer Not Added' }}</b>
             (Cash in charge)
             and the exact weight, purity and market value are indicated below:
-        </p>
+        </div>
 
         {{-- GOLD TABLE --}}
         <table>
@@ -218,11 +205,8 @@ $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) 
                     $i = 1;
                     $gross = $net = $stone = $total = 0;
                     $puritySummary = [];
-
-                    // Check if goldItems exists before sorting
                     $sortedItems = $customer->goldItems 
-                                    ? $customer->goldItems->sortBy(fn($item) => 
-                                        (int) filter_var($item->purity, FILTER_SANITIZE_NUMBER_INT)) 
+                                    ? $customer->goldItems->sortBy(fn($item) => (int) filter_var($item->purity, FILTER_SANITIZE_NUMBER_INT)) 
                                     : collect();
                 @endphp
 
@@ -243,9 +227,8 @@ $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) 
                         $gross += $item->gross_weight;
                         $net += $item->net_weight;
                         $total += $item->market_value;
-
                         $p = (int) filter_var($item->purity, FILTER_SANITIZE_NUMBER_INT);
-                        if ($p > 0) { // Only add if purity is valid
+                        if ($p > 0) { 
                             $puritySummary[$p]['net'] = ($puritySummary[$p]['net'] ?? 0) + $item->net_weight;
                         }
                     @endphp
@@ -286,7 +269,6 @@ $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) 
                     </td>
                 </tr>
 
-                {{-- --- CORRECTED CARAT SUMMARY TABLE --- --}}
                 <tr>
                     <th colspan="4" style="border:1px solid #000;padding:6px;text-align:left; border-bottom: 0;">
                         Carat Summary:
@@ -317,44 +299,32 @@ $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) 
                         @endif
                     </td>
                 </tr>
-                {{-- --- END CORRECTION --- --}}
-
             </table>
         </div>
 
-        
         <p style="margin-top:10px;text-align:justify;">
             <b>Method used for purity testing:</b><br>
             I solemnly declare that weight, purity of the gold ornaments/precious stones indicated above are correct
-and I undertake to indemnify the Bank against any loss it may sustain on account of any inaccuracy in the
-above appraisal.
+            and I undertake to indemnify the Bank against any loss it may sustain on account of any inaccuracy in the
+            above appraisal.
         </p>
 
-        
-        {{-- --- Corrected: Replaced div.signature-block with a table for PDF compatibility --- --}}
         <table class="signature-table">
             <tr>
                 <td style="text-align: left;">
                     Place: {{ $customer->city ?? 'Darbhanga' }} <br>
                     Date: {{ optional($customer->date)->format('d/m/Y') ?? date('d/m/Y') }}
-                    
-                    {{-- Added space for signature --}}
                     <br><br><br><br>
-                    
                     <b>Name & Signature of the Borrower</b>
                 </td>
 
                 <td style="text-align: right;">
                     Yours faithfully
-                    
-                    {{-- Added space for signature --}}
                     <br><br><br><br>
-
                     <b>Name & Signature of the Appraiser</b>
                 </td>
             </tr>
         </table>
-        {{-- --- End Correction --- --}}
 
         <div class="footer-line">Design & Developed by Jatin Mishra</div>
     </div>

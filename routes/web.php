@@ -121,6 +121,9 @@ Route::put('profile', [ManageAdminController::class, 'updateMyProfile'])->name('
         Route::get('appraisal', [AppraisalController::class, 'index'])->name('appraisal.index');
         Route::get('appraisal/data/{customer}/{type}', [AppraisalController::class, 'getData'])->name('appraisal.data');
         Route::get('appraisal/pdf/{customer}/{type}', [AppraisalController::class, 'downloadPdf'])->name('appraisal.pdf');
+Route::get('appraisal/download-again/{id}', 
+    [AppraisalController::class, 'downloadAgain']
+)->name('appraisal.downloadAgain');
 
         // ============================
         // 💹 Gold Price

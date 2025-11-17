@@ -54,7 +54,7 @@
 
         /* --- STYLES FOR DATE & QR CODE ROW --- */
         .date-qr-section {
-            display: table; /* Use table display for robust layout */
+            display: table;
             width: 100%;
             margin-bottom: 10px;
             border-collapse: collapse;
@@ -62,28 +62,25 @@
 
         .date-block {
             display: table-cell;
-            width: 70%; /* Give most width to the date */
-            text-align: right; /* Keep it aligned right */
-            vertical-align: top; /* Align to top */
-            padding-top: 10px; /* Add padding to align with QR */
-            padding-right: 10px; /* Add spacing */
+            width: 70%;
+            text-align: right;
+            vertical-align: top;
+            padding-top: 10px;
+            padding-right: 10px;
         }
 
         .header-qr {
-            display: table-cell; /* Act like a <td> */
+            display: table-cell;
             width: 30%;
             text-align: center;
             vertical-align: top;
         }
 
         .header-qr img {
-            width: 100px;  /* Set your desired width */
-            height: 100px; /* Set your desired height */
+            width: 100px;
+            height: 100px;
         }
-        /* --- END MODIFIED STYLES --- */
 
-
-        /* --- Corrected: PDF-friendly signature table --- */
         .signature-table-alt {
             width: 100%;
             border: 0;
@@ -97,7 +94,6 @@
             vertical-align: top;
             padding: 0;
         }
-        /* --- End Correction --- */
 
         .footer {
             margin-top: 15px;
@@ -123,6 +119,7 @@
                 <img src="data:image/png;base64,{{ $qrCode }}" alt="QR Code">
             </div>
         </div>
+
         {{-- UPPER INFO TABLE --}}
         <table>
             <tr>
@@ -143,14 +140,44 @@
             </tr>
         </table>
         
-        <br> <p>
+        {{-- --- PHP LOGIC FOR BANK FULL FORM --- --}}
+        @php
+            // Get the bank name from database, force lowercase for comparison
+            $rawBank = strtolower($customer->bank->bank ?? '');
+            
+            // Define mapping for short forms
+            $bankList = [
+                'sbi'    => 'State Bank of India',
+                'bob'    => 'Bank of Baroda',
+                'pnb'    => 'Punjab National Bank',
+                'boi'    => 'Bank of India',
+                'hdfc'   => 'HDFC Bank',
+                'icici'  => 'ICICI Bank',
+                'canara' => 'Canara Bank',
+                'union'  => 'Union Bank of India',
+                'idbi'   => 'IDBI Bank',
+                'cbi'    => 'Central Bank of India',
+                'iob'    => 'Indian Overseas Bank'
+            ];
+
+            // Check if abbreviation exists in list, otherwise just Capitalize the original text
+            $finalBankName = $bankList[$rawBank] ?? ucwords($customer->bank->bank ?? 'Bank Name');
+        @endphp
+
+        <br> 
+        <p>
             The Branch Manager, <br>
             
-            {{-- --- *** CORRECTED BANK & BRANCH SECTION *** --- --}}
-            <b>{{ $customer->bank->bank ?? 'Bank Name N/A' }}</b> 
-            ( {{ $customer->bank->bank_code ?? 'N/A' }}) <br>
-            {{ $customer->branch->branch_address ?? 'Branch Address N/A' }} 
-            {{-- --- *** END CORRECTION *** --- --}}
+            {{-- Display Full Bank Name --}}
+            <b style="font-size: 14px;">{{ $finalBankName }}</b> <br>
+            
+            {{-- Display Branch Address --}}
+            {{ $customer->branch->branch_address ?? 'Branch Address' }} <br>
+
+            {{-- Display Code (Branch Name ke niche/bagal me) --}}
+            <span style="font-weight: bold;">
+                (Branch Code: {{ $customer->bank->bank_code ?? $customer->branch->branch_code ?? 'N/A' }})
+            </span>
         </p>
 
         <p>
@@ -225,7 +252,6 @@
             loss it may sustain on account of any inaccuracy in appraisal.
         </p>
 
-        {{-- --- Corrected: PDF-friendly signature table --- --}}
         <table class="signature-table-alt">
             <tr>
                 <td style="text-align: left;">
@@ -238,7 +264,6 @@
                 </td>
             </tr>
         </table>
-        {{-- --- End Correction --- --}}
 
         <br><br>
 
