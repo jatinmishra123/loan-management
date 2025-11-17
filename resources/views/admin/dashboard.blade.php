@@ -126,7 +126,7 @@
                 <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 d-flex align-items-center">
                         <i class="ri-gold-line text-warning me-2 fs-4"></i>
-                        Enter Gold Price (Per 1 Carat)
+                        Enter Gold Price per gram (24 carat)
                     </h5>
                 </div>
 
@@ -136,7 +136,7 @@
                         class="d-flex align-items-center flex-wrap gap-3">
                         @csrf
                         <input type="number" step="0.01" name="price" class="form-control shadow-sm border-warning"
-                            placeholder="Enter price for 1 Carat (₹)" required style="max-width: 300px;">
+                            placeholder="Enter price for per gram (24 Carat)-> (₹)" required style="max-width: 300px;">
                         <button type="submit" class="btn btn-warning text-white fw-semibold shadow-sm">
                             <i class="ri-check-line me-1"></i> Save Price
                         </button>
@@ -149,7 +149,7 @@
                                 💰 ₹{{ number_format($latestPrice->price, 2) }}
                             </h1>
                             <p class="mb-0 text-muted fs-6">
-                                <strong>Current Gold Price (Per 1 Carat)</strong>
+                                <strong>Current Gold Price  per gram (Per 24 Carat)</strong>
                             </p>
                             <small class="text-secondary d-block mb-3">
                                 Last updated: {{ $latestPrice->updated_at->format('d M Y, h:i A') }}

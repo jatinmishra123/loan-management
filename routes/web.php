@@ -72,9 +72,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // 👥 Customers
         // ============================
         Route::resource('customers', CustomerController::class);
-        Route::get('customers/search', [CustomerController::class, 'search'])->name('customers.search');
+        // Route::get('customers/search', ...) <-- DELETE THIS LINE
         Route::post('customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
 
+        // AJAX: Get Branches by Bank (used in Create Customer)
+        Route::get('branches-by-bank/{bankId}', [CustomerController::class, 'getBranchesByBank'])
+            ->name('branches.by-bank');
         // AJAX: Get Branches by Bank (used in Create Customer)
 Route::get('branches-by-bank/{bankId}', [CustomerController::class, 'getBranchesByBank'])
     ->name('branches.by-bank');
@@ -90,6 +93,9 @@ Route::get('branches-by-bank/{bankId}', [CustomerController::class, 'getBranches
         // ============================
         Route::resource('subcategories', SubcategoryController::class);
         Route::post('subcategories/{subcategory}/toggle-status', [SubcategoryController::class, 'toggleStatus'])->name('subcategories.toggle-status');
+// My Profile (for all admins)
+Route::get('profile', [ManageAdminController::class, 'myProfile'])->name('profile');
+Route::put('profile', [ManageAdminController::class, 'updateMyProfile'])->name('profile.update');
 
         // ============================
         // ✉️ Contacts

@@ -83,12 +83,21 @@
         /* --- END MODIFIED STYLES --- */
 
 
-        .signature-block {
+        /* --- Corrected: PDF-friendly signature table --- */
+        .signature-table-alt {
+            width: 100%;
+            border: 0;
             margin-top: 25px;
-            display: flex;
-            justify-content: space-between;
             font-size: 12px;
+            page-break-inside: avoid;
         }
+        .signature-table-alt td {
+            width: 50%;
+            border: 0;
+            vertical-align: top;
+            padding: 0;
+        }
+        /* --- End Correction --- */
 
         .footer {
             margin-top: 15px;
@@ -130,14 +139,18 @@
             </tr>
             <tr>
                 <th>Date of Appraiser’s Certificate</th>
-                <td>{{ now()->format('d/m/Y') }}</td>
+                <td>{{ $customer->date ? $customer->date->format('d/m/Y') : now()->format('d/m/Y') }}</td>
             </tr>
         </table>
         
         <br> <p>
             The Branch Manager, <br>
-            {{ $bankName }}<br>
-            {{ $customer->branch->branch_name ?? '__________' }} Branch
+            
+            {{-- --- *** CORRECTED BANK & BRANCH SECTION *** --- --}}
+            <b>{{ $customer->bank->bank ?? 'Bank Name N/A' }}</b> 
+            ( {{ $customer->bank->bank_code ?? 'N/A' }}) <br>
+            {{ $customer->branch->branch_address ?? 'Branch Address N/A' }} 
+            {{-- --- *** END CORRECTION *** --- --}}
         </p>
 
         <p>
@@ -212,17 +225,20 @@
             loss it may sustain on account of any inaccuracy in appraisal.
         </p>
 
-        <div class="signature-block">
-            <div>
-                Yours faithfully <br><br><br>
-                Name & Signature of the Appraiser
-            </div>
-
-            <div style="text-align:right;">
-                <br><br><br>
-                (Seal)
-            </div>
-        </div>
+        {{-- --- Corrected: PDF-friendly signature table --- --}}
+        <table class="signature-table-alt">
+            <tr>
+                <td style="text-align: left;">
+                    Yours faithfully <br><br><br><br>
+                    Name & Signature of the Appraiser
+                </td>
+                <td style="text-align: right;">
+                    <br><br><br><br>
+                    (Seal)
+                </td>
+            </tr>
+        </table>
+        {{-- --- End Correction --- --}}
 
         <br><br>
 

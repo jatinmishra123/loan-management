@@ -57,7 +57,7 @@
             font-size: 16px;
             font-weight: bold;
             text-decoration: underline;
-            margin: 2px 0 8px 0; /* <-- *** FIXED MARGIN HERE *** */
+            margin: 0 0 8px 0; /* <-- *** Corrected: Top margin set to 0 *** */
         }
 
         table {
@@ -79,12 +79,20 @@
             font-weight: bold;
         }
 
-        .signature-block {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
+        /* --- Corrected: Replaced flex .signature-block with table for PDF compatibility --- */
+        .signature-table {
+            width: 100%;
+            border: 0;
+            margin-top: 25px; /* Added margin for space */
             font-size: 12px;
+            page-break-inside: avoid; /* Try to prevent breaking table across pages */
         }
+        .signature-table td {
+            width: 50%;
+            border: 0;
+            vertical-align: top; /* Align content to the top */
+        }
+        /* --- End Correction --- */
 
         .footer-line {
             text-align: right;
@@ -111,7 +119,7 @@
         <div class="header">
             <h2>{{ $admin->name ?? 'Jeweller Shop Name' }}</h2>
             <div class="sub-header">{{ $admin->address ?? 'Full Address Not Added' }}</div>
-            <div>Appraiser Bank A/c - {{ $admin->bank_account ?? 'N/A' }}</div>
+            <div>Appraiser Bank A/c - {{ $admin->account_number ?? 'N/A' }}</div>
         </div>
 
         {{-- --- CORRECTED HEADER/META SECTION --- --}}
@@ -166,7 +174,7 @@ $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) 
 
             {{-- --- *** Bank name formatting (SBI to State Bank of India) *** --- --}}
             <div style="display: flex; justify-content: space-between; font-weight: bold;">
-              <span>{{ $bankName }}</span>
+                <span>{{ $bankName }}</span>
 
                 <span>A/c No.: {{ $customer->account_number ?? '—' }}</span>
             </div>
@@ -195,13 +203,13 @@ $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) 
             <thead>
                 <tr>
                     <th>Sl No.</th>
-                    <th>Description</th>
-                    <th>No.</th>
-                    <th>Stone Wt</th>
-                    <th>Gross Wt</th>
-                    <th>Net Wt</th>
-                    <th>Purity</th>
-                    <th>Value</th>
+                    <th>Description of the Article</th>
+                    <th>No. of Article(units)</th>
+                    <th>Approximate weight of the precious stones in the ornaments (Grams)</th>
+                    <th>Gross Weight (Gram)</th>
+                    <th>Net Weight (Gram)</th>
+                    <th>Purity (Carat)</th>
+                    <th>Market Value (Rs.)</th>
                 </tr>
             </thead>
 
@@ -270,7 +278,7 @@ $refAdmin = strtoupper(collect(explode(' ', $admin->name ?? 'N/A'))->map(fn($w) 
                     <td width="50%" style="border:1px solid #000;padding:6px;">
                         {{ amountToWords((int)$total) }}
                     </td>
-                    <th width="12%" style="border:1px solid #0CSS;padding:6px;text-align:center;">
+                    <th width="12%" style="border:1px solid #000;padding:6px;text-align:center;">
                         Round Up
                     </th>
                     <td width="13%" style="border:1px solid #000;padding:6px;font-weight:bold;text-align:right;">
@@ -323,19 +331,30 @@ above appraisal.
         </p>
 
         
-        <div class="signature-block">
-            <div>
-                Place: {{ $customer->city ?? 'Darbhanga' }} <br>
-                Date: {{ optional($customer->date)->format('d/m/Y') ?? date('d/m/Y') }} <br><br>
-                Name & Signature of the Borrower
-            </div>
+        {{-- --- Corrected: Replaced div.signature-block with a table for PDF compatibility --- --}}
+        <table class="signature-table">
+            <tr>
+                <td style="text-align: left;">
+                    Place: {{ $customer->city ?? 'Darbhanga' }} <br>
+                    Date: {{ optional($customer->date)->format('d/m/Y') ?? date('d/m/Y') }}
+                    
+                    {{-- Added space for signature --}}
+                    <br><br><br><br>
+                    
+                    <b>Name & Signature of the Borrower</b>
+                </td>
 
-            <div>
-                Yours faithfully
-                <br><br><br>
-                Name & Signature of the Appraiser
-            </div>
-        </div>
+                <td style="text-align: right;">
+                    Yours faithfully
+                    
+                    {{-- Added space for signature --}}
+                    <br><br><br><br>
+
+                    <b>Name & Signature of the Appraiser</b>
+                </td>
+            </tr>
+        </table>
+        {{-- --- End Correction --- --}}
 
         <div class="footer-line">Design & Developed by Jatin Mishra</div>
     </div>

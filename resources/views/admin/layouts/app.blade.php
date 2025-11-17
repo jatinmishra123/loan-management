@@ -349,9 +349,15 @@
                         </span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="{{ route('admin.change-credentials') }}">
-                            <i class="ri-lock-password-line align-middle me-1"></i> Change Credentials
-                        </a></li>
+                      
+                      <li>
+<li>
+    <a class="dropdown-item" href="{{ route('admin.profile') }}">
+        <i class="ri-user-settings-line align-middle me-1"></i> Profile
+    </a>
+</li>
+
+
                         <li>
                             <hr class="dropdown-divider">
                         </li>
@@ -451,12 +457,30 @@
                     </a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.manage_admins.*') ? 'active' : '' }}" href="{{ route('admin.manage_admins.create') }}">
-                        <i class="ri-admin-line"></i>
-                        <span class="menu-title">Manage Admin</span>
-                    </a>
-                </li>
+              @php
+    $admin = auth('admin')->user();
+@endphp
+
+@if($admin->isSuperAdmin())
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('admin.manage_admins.*') ? 'active' : '' }}" 
+           href="{{ route('admin.manage_admins.create') }}">
+            <i class="ri-admin-line"></i>
+            <span class="menu-title">Manage Admin</span>
+        </a>
+    </li>
+
+    <!-- NEW: All Admin List -->
+ <li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('admin.manage_admins.*') ? 'active' : '' }}" 
+       href="{{ route('admin.manage_admins.index') }}">
+        <i class="ri-user-settings-line"></i>
+        <span class="menu-title">All Admin List</span>
+    </a>
+</li>
+
+@endif
+
 
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}" href="{{ route('admin.invoices.index') }}">

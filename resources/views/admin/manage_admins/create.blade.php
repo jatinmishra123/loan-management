@@ -75,7 +75,7 @@
                                 <label for="role_id" class="form-label">Role</label>
                                 <select name="role_id" id="role_id" class="form-select @error('role_id') is-invalid @enderror" required>
                                     <option value="">Select Role</option>
-                                    <option value="1" {{ old('role_id') == 1 ? 'selected' : '' }}>Super Admin</option>
+                                    {{-- <option value="1" {{ old('role_id') == 1 ? 'selected' : '' }}>Super Admin</option> --}}
                                     <option value="2" {{ old('role_id') == 2 ? 'selected' : '' }}>Admin</option>
                                 </select>
                                 @error('role_id') <div class="invalid-feedback">{{ $message }}</div> @enderror

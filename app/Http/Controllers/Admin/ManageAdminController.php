@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
+use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
@@ -132,4 +133,28 @@ class ManageAdminController extends Controller
 
         return redirect()->route('admin.manage_admins.index')->with('success', 'Admin deleted successfully.');
     }
+    public function myProfile()
+{
+    $admin = Auth::guard('admin')->user();
+    return view('admin.profile.profile', compact('admin'));
+}
+
+public function updateMyProfile(Request $request)
+{
+    $admin = Auth::guard('admin')->user();
+
+    $data = $request->except('password');
+
+    if ($request->password) {
+        $request->validate([
+            'password' => 'confirmed|min:6'
+        ]);
+        $data['password'] = bcrypt($request->password);
+    }
+
+    $admin->update($data);
+
+    return back()->with('success', 'Profile updated successfully!');
+}
+
 }
