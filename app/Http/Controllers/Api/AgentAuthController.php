@@ -11,15 +11,17 @@ use Illuminate\Support\Str;
 
 class AgentAuthController extends Controller
 {
-    // 📌 Agent Login API
+    /**
+     * 🔐 Agent Login API
+     */
     public function login(Request $request)
     {
         $request->validate([
             'mobile_number' => 'required|digits:10',
-            'password' => 'required',
+            'password'      => 'required',
         ]);
 
-        // Eager load bank & branch (only needed columns)
+        // Load agent with bank & branch relationship
         $agent = Agent::with([
             'bank:id,bank',
             'branch:id,branch_address'
@@ -27,75 +29,76 @@ class AgentAuthController extends Controller
 
         if (!$agent) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Agent not found',
             ], 404);
         }
 
+        // Password Check
         if (!Hash::check($request->password, $agent->password)) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Invalid credentials',
             ], 401);
         }
 
-        // ✅ Generate random token
+        // Generate token
         $token = Str::random(60);
 
-        // ✅ Save token in DB (allow multi-device login)
         AgentToken::create([
             'agent_id' => $agent->id,
-            'token' => $token,
+            'token'    => $token,
         ]);
 
+        // Prepare Agent Data Response
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'Login successful',
-            'agent' => [
-                'id' => $agent->id,
-                'name' => $agent->name,
-                'email' => $agent->email,
-                'mobile_number' => $agent->mobile_number,
+            'agent'   => [
+                'id'              => $agent->id,
+                'name'            => $agent->name,
+                'email'           => $agent->email,
+                'mobile_number'   => $agent->mobile_number,
+                'designation'     => $agent->designation,
+                'whatsapp_number' => $agent->whatsapp_number,
 
-                // ✅ Bank: use `bank` column
-                'bank' => $agent->bank?->bank,
+                // Bank Name
+                'bank' => $agent->bank ? $agent->bank->bank : null,
 
-                // ✅ Branch: send `branch_address`
+                // Branch Data
                 'branch' => $agent->branch ? [
-                    'id' => $agent->branch->id,
+                    'id'             => $agent->branch->id,
                     'branch_address' => $agent->branch->branch_address,
                 ] : null,
 
-                'image' => $agent->image ? asset('storage/' . $agent->image) : null,
+                // Agent Image
+                'image' => $agent->image
+                    ? asset('storage/' . $agent->image)
+                    : null,
             ],
             'token' => $token,
-        ], 200);
+        ]);
     }
 
-    // 📌 Agent Logout API
+
+    /**
+     * 🚪 Agent Logout API
+     */
     public function logout(Request $request)
     {
         $token = $request->bearerToken();
 
         if (!$token) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Token not provided',
             ], 400);
         }
 
         $deleted = AgentToken::where('token', $token)->delete();
 
-        if ($deleted) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Logout successful',
-            ], 200);
-        }
-
-        return response()->json([
-            'status' => false,
-            'message' => 'Invalid token',
-        ], 401);
+        return $deleted
+            ? response()->json(['status' => true, 'message' => 'Logout successful'])
+            : response()->json(['status' => false, 'message' => 'Invalid token'], 401);
     }
 }

@@ -18,6 +18,7 @@ class Bank extends Model
     'admin_id',
     'bank',
     'address',
+    'ifsc_code',
     'bank_code',
    
 ];

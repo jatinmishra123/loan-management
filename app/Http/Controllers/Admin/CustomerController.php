@@ -12,23 +12,22 @@ class CustomerController extends Controller
 {
     /**
      * Display list of customers (Admin-wise)
-     * Handles both initial load and AJAX filtering.
      */
     public function index(Request $request)
     {
         $admin = auth('admin')->user();
 
-        // Base query with relationships
         $query = Customer::with(['bank', 'branch', 'admin']);
 
-        // Filter by Admin role
+        // Restrict to admin
         if (!$admin->isSuperAdmin()) {
             $query->where('admin_id', $admin->id);
         }
 
-        // Apply Search Filter
-        if ($request->has('search') && !empty($request->search)) {
+        // Search filter
+        if (!empty($request->search)) {
             $search = $request->search;
+
             $query->where(function ($q) use ($search) {
                 $q->where('brauser_name', 'LIKE', "%{$search}%")
                     ->orWhere('ralative_name', 'LIKE', "%{$search}%")
@@ -38,19 +37,19 @@ class CustomerController extends Controller
             });
         }
 
-        // Apply Status Filter
-        if ($request->has('status') && !empty($request->status)) {
-            $status = $request->status === 'active' ? 1 : 0;
-            $query->where('is_active', $status);
+        // Status filter
+        if (!empty($request->status)) {
+            $query->where('is_active', $request->status === 'active' ? 1 : 0);
         }
 
         $customers = $query->latest()->paginate(10);
 
-        // Handle AJAX requests for pagination and filtering
+        // AJAX response
         if ($request->ajax()) {
-            $html = view('admin.customers.partials.table_rows', compact('customers'))->render();
-            $pagination = $customers->links('pagination::bootstrap-5')->toHtml();
-            return response()->json(['html' => $html, 'pagination' => $pagination]);
+            return response()->json([
+                'html' => view('admin.customers.partials.table_rows', compact('customers'))->render(),
+                'pagination' => $customers->links('pagination::bootstrap-5')->toHtml(),
+            ]);
         }
 
         return view('admin.customers.index', compact('customers'));
@@ -58,13 +57,12 @@ class CustomerController extends Controller
 
 
     /**
-     * Show form for creating a new customer.
+     * Create Customer Form
      */
     public function create()
     {
         $adminId = auth('admin')->id();
 
-        // Only admin-wise active banks
         $banks = Bank::where('admin_id', $adminId)
             ->where('is_active', 1)
             ->get();
@@ -72,8 +70,9 @@ class CustomerController extends Controller
         return view('admin.customers.create', compact('banks'));
     }
 
+
     /**
-     * Store a newly created customer.
+     * Store Customer
      */
     public function store(Request $request)
     {
@@ -89,8 +88,6 @@ class CustomerController extends Controller
             'loan_number'     => 'required|string|max:100',
             'saving_number'   => 'required|string|max:100',
             'ladger_number'   => 'required|string|max:100',
-            'ledger_folio_no' => 'nullable|string|max:255',
-            'gold_loan_alc_no'=> 'nullable|string|max:255',
             'is_active'       => 'required|boolean',
             'alter_address'   => 'nullable|string',
             'paid'            => 'required|integer|in:0,1,2',
@@ -112,8 +109,6 @@ class CustomerController extends Controller
             'loan_number'     => $request->loan_number,
             'saving_number'   => $request->saving_number,
             'ladger_number'   => $request->ladger_number,
-            'ledger_folio_no' => $request->ledger_folio_no,
-            'gold_loan_alc_no'=> $request->gold_loan_alc_no,
             'is_active'       => $request->is_active,
             'alter_address'   => $request->alter_address,
             'paid'            => $request->paid,
@@ -126,26 +121,26 @@ class CustomerController extends Controller
             ->with('success', 'Customer created successfully.');
     }
 
+
     /**
-     * Show single customer details
+     * Show Customer Details
      */
     public function show(Customer $customer)
     {
         $admin = auth('admin')->user();
 
-        // If not super admin → check owner
         if (!$admin->isSuperAdmin() && $customer->admin_id != $admin->id) {
             abort(403, 'Unauthorized access.');
         }
 
-        // Load bank, branch and gold items
-        $customer->load(['bank', 'branch', 'goldItems']);
+        $customer->load(['bank', 'branch']);
 
         return view('admin.customers.show', compact('customer'));
     }
 
+
     /**
-     * Edit customer
+     * Edit Customer Form
      */
     public function edit(Customer $customer)
     {
@@ -155,14 +150,12 @@ class CustomerController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $adminId = $customer->admin_id; // Use customer's admin_id for consistency
+        $adminId = $customer->admin_id;
 
-        // Admin-wise banks
         $banks = Bank::where('admin_id', $adminId)
             ->where('is_active', 1)
             ->get();
 
-        // Branches for the *currently selected* bank (needed for page load)
         $branches = Branch::where('admin_id', $adminId)
             ->where('bank_id', $customer->bank_id)
             ->get();
@@ -170,8 +163,9 @@ class CustomerController extends Controller
         return view('admin.customers.edit', compact('customer', 'banks', 'branches'));
     }
 
+
     /**
-     * Update customer
+     * Update Customer
      */
     public function update(Request $request, Customer $customer)
     {
@@ -193,8 +187,6 @@ class CustomerController extends Controller
             'loan_number'     => 'required|string|max:100',
             'saving_number'   => 'required|string|max:100',
             'ladger_number'   => 'required|string|max:100',
-            'ledger_folio_no' => 'nullable|string|max:255',
-            'gold_loan_alc_no'=> 'nullable|string|max:255',
             'is_active'       => 'required|boolean',
             'alter_address'   => 'nullable|string',
             'paid'            => 'required|integer|in:0,1,2',
@@ -215,8 +207,6 @@ class CustomerController extends Controller
             'loan_number'     => $request->loan_number,
             'saving_number'   => $request->saving_number,
             'ladger_number'   => $request->ladger_number,
-            'ledger_folio_no' => $request->ledger_folio_no,
-            'gold_loan_alc_no'=> $request->gold_loan_alc_no,
             'is_active'       => $request->is_active,
             'alter_address'   => $request->alter_address,
             'paid'            => $request->paid,
@@ -229,45 +219,32 @@ class CustomerController extends Controller
             ->with('success', 'Customer updated successfully.');
     }
 
+
     /**
-     * Delete customer
-     * Logic: Super Admin OR The Creator Admin can delete.
+     * Delete Customer
      */
     public function destroy(Customer $customer)
     {
         $admin = auth('admin')->user();
 
-        // CONDITION CHECK:
-        // 1. Agar user Super Admin hai -> ALLOW
-        // 2. YA FIR, agar user wahi hai jisne customer create kiya ($customer->admin_id == $admin->id) -> ALLOW
         if ($admin->isSuperAdmin() || $customer->admin_id == $admin->id) {
-            
             try {
                 $customer->delete();
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Customer deleted successfully.'
-                ]);
+                return response()->json(['success' => true, 'message' => 'Customer deleted successfully.']);
             } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to delete customer.'
-                ], 500);
+                return response()->json(['success' => false, 'message' => 'Failed to delete customer.'], 500);
             }
         }
 
-        // Agar upar wali condition match nahi hui, to permission nahi hai
         return response()->json([
             'success' => false,
-            'message' => 'Unauthorized action. You can only delete customers created by you.',
+            'message' => 'Unauthorized action.'
         ], 403);
     }
 
 
     /**
-     * Branches as per Bank (AJAX)
-     * USED IN YOUR FRONTEND → MUST RETURN cash_incharge ALSO
+     * AJAX: Branch list based on bank
      */
     public function getBranchesByBank($bankId)
     {
@@ -275,33 +252,29 @@ class CustomerController extends Controller
 
         $branches = Branch::where('admin_id', $adminId)
             ->where('bank_id', $bankId)
-            ->where('is_active', 1) // Only show active branches
-            ->get(['id', 'branch_address', 'cash_incharge']); // 👈 Correct!
+            ->where('is_active', 1)
+            ->get(['id', 'branch_address', 'cash_incharge']);
 
         return response()->json($branches);
     }
 
+
     /**
-     * Toggle Status (AJAX)
+     * Toggle Status
      */
     public function toggleStatus(Customer $customer)
     {
         $admin = auth('admin')->user();
 
         if (!$admin->isSuperAdmin() && $customer->admin_id != $admin->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized action.',
-            ], 403);
+            return response()->json(['success' => false, 'message' => 'Unauthorized action.'], 403);
         }
 
-        $customer->update([
-            'is_active' => !$customer->is_active
-        ]);
+        $customer->update(['is_active' => !$customer->is_active]);
 
         return response()->json([
-            'success'   => true,
-            'message'   => 'Status updated successfully.',
+            'success' => true,
+            'message' => 'Status updated successfully.',
             'is_active' => $customer->is_active,
         ]);
     }

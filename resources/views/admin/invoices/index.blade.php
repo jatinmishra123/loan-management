@@ -4,6 +4,7 @@
 
 @push('styles')
 <style>
+    /* ... (CSS styles remain the same) ... */
     body { background-color: #f9fafb !important; }
 
     h2 { font-size: 1.25rem; font-weight: 600; }
@@ -101,7 +102,7 @@
                             <th>Date</th>
                             <th class="text-center">Status</th>
                             <th class="text-end">Total</th>
-                            <th class="text-end">Round Off</th>
+                            <th class="text-end">Round_Off</th>
                             <th>Bank</th>
                             <th>Created</th>
                             <th class="text-center">Actions</th>
@@ -128,12 +129,18 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{{-- Add jQuery if it's not globally available --}}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
 
 <script>
+// We use a regular variable to store the CSRF token globally for AJAX
+const CSRF_TOKEN = "{{ csrf_token() }}"; 
+
 $(document).ready(function () {
 
     let searchTimeout;
-
+    
+    // 1. Function to Load Invoices (Handles Searching and Filtering)
     function loadInvoices(page = 1) {
         $.ajax({
             url: "{{ route('admin.invoices.index') }}",
@@ -148,54 +155,78 @@ $(document).ready(function () {
             success: (res) => {
                 $('#invoicesTableBody').html(res.table_html);
                 $('#paginationWrapper').html(res.pagination_html);
+                
+                // Re-initialize tooltips for newly loaded content
+                $('[data-bs-toggle="tooltip"]').tooltip('dispose'); 
+                $('[data-bs-toggle="tooltip"]').tooltip();
             },
-
+            error: (xhr) => {
+                console.error("AJAX Load Error:", xhr.responseText);
+                $('#invoicesTableBody').html(`<tr><td colspan="10" class="text-center text-danger py-4">Error loading data. Please try refreshing.</td></tr>`);
+            },
             complete: () => $('.table-loader').addClass('d-none'),
         });
     }
 
-    // Search
+    // --- Event Handlers ---
+
+    // 2. Search (Triggers load after a short delay)
     $('#searchInput').on('keyup', function () {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => loadInvoices(1), 400);
     });
 
-    // Filter
+    // 3. Filter (Triggers load immediately)
     $('#customerFilter').on('change', () => loadInvoices(1));
 
-    // Pagination
-    $(document).on('click', '.pagination a', function (e) {
+    // 4. Pagination (Delegate click listener to the pagination wrapper)
+    $(document).on('click', '#paginationWrapper .pagination a', function (e) {
         e.preventDefault();
         let page = new URL($(this).attr('href')).searchParams.get('page');
         loadInvoices(page);
     });
 
-    // Delete
+    // 5. Delete (Delegated click listener for dynamically loaded buttons)
     $(document).on('click', '.delete-invoice-btn', function () {
         let id = $(this).data('id');
-        let name = $(this).data('name');
+        let invoiceNo = $(this).data('invoice-no'); 
+        
+        // Construct the delete URL correctly using the Laravel route name
+        let deleteUrl = "{{ route('admin.invoices.destroy', 'ID_PLACEHOLDER') }}";
+        deleteUrl = deleteUrl.replace('ID_PLACEHOLDER', id);
+
 
         Swal.fire({
-            title: "Delete?",
-            text: `Invoice #${name} will be deleted permanently!`,
+            title: "Are you sure?",
+            text: `Invoice #${invoiceNo} will be deleted permanently!`,
             icon: "warning",
             showCancelButton: true
         }).then((r) => {
             if (r.isConfirmed) {
                 $.ajax({
-                    url: `/admin/invoices/${id}`,
-                    method: "DELETE",
-                    data: { _token: "{{ csrf_token() }}" },
+                    // Use the correctly constructed DELETE URL
+                    url: deleteUrl, 
+                    method: "POST", // Must be POST with method spoofing
+                    data: { 
+                        _token: CSRF_TOKEN,
+                        _method: 'DELETE' // Method spoofing
+                    },
 
                     success: () => {
                         Swal.fire("Deleted!", "", "success");
-                        loadInvoices(1);
+                        loadInvoices(1); // Reload data
+                    },
+                    error: (xhr) => {
+                        Swal.fire("Error!", "Deletion failed. Check console for details.", "error");
+                        console.error("Delete Error:", xhr.responseText);
                     }
                 });
             }
         });
     });
-
+    
+    // 💡 FINAL FIX: Ensure tooltips are initialized on the *initial* page load
+    $('[data-bs-toggle="tooltip"]').tooltip();
 });
 </script>
 @endpush

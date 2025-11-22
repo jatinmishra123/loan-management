@@ -27,6 +27,7 @@ class BankController extends Controller
         $request->validate([
             'bank'       => 'required|string|max:255',
             'address'    => 'nullable|string|max:255',
+            'ifsc_code'    => 'nullable|string|max:255',
             'bank_code'  => 'required|string|max:50|unique:banks,bank_code',
             'is_active'  => 'required|boolean',
         ]);
@@ -35,6 +36,7 @@ class BankController extends Controller
             'admin_id'   => auth()->guard('admin')->id(),  // FIXED
             'bank'       => $request->bank,
             'address'    => $request->address,
+            'ifsc_code'    => $request->ifsc_code,
             'bank_code'  => $request->bank_code,
             'is_active'  => $request->is_active,
         ]);
@@ -62,6 +64,7 @@ class BankController extends Controller
         $request->validate([
             'bank'       => 'required|string|max:255',
             'address'    => 'nullable|string|max:255',
+               'ifsc_code'    => 'nullable|string|max:255',
             'bank_code'  => 'required|string|max:50|unique:banks,bank_code,' . $bank->id,
             'is_active'  => 'required|boolean',
         ]);
@@ -70,6 +73,7 @@ class BankController extends Controller
             'admin_id'   => auth()->guard('admin')->id(),
             'bank'       => $request->bank,
             'address'    => $request->address,
+            'ifsc_code'    => $request->ifsc_code,
             'bank_code'  => $request->bank_code,
             'is_active'  => $request->is_active,
         ]);

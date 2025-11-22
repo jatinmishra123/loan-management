@@ -24,7 +24,7 @@ class AppraisalController extends Controller
             ->orderBy('brauser_name')
             ->get();
 
-        $types = ['Appraisal 1', 'Appraisal 2'];
+        $types = ['Appraisal 1'];
 
         return view('admin.appraisal.index1', compact('customers', 'types'));
     }

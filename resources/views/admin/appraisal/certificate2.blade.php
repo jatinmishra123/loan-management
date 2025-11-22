@@ -256,8 +256,7 @@
             <tr>
                 <td style="text-align: left;">
                     Yours faithfully <br><br><br><br>
-                    Name & Signature of the Appraiser
-                </td>
+Cash Officer in Charge                </td>
                 <td style="text-align: right;">
                     <br><br><br><br>
                     (Seal)
@@ -269,7 +268,8 @@
 
         <table class="no-border" style="width:100%; margin-top:20px;">
             <tr class="no-border">
-                <td class="no-border" width="50%" style="text-align: left;">Cash Officer in Charge</td>
+                <td class="no-border" width="50%" style="text-align:right;">Name & Signature of the Appraiser
+</td>
                 <td class="no-border right" width="50%">Joint Custody Officer</td>
             </tr>
         </table>

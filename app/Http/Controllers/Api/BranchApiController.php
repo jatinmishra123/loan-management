@@ -5,92 +5,145 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class BranchApiController extends Controller
 {
-    // 📋 List branches with bank info
-    public function index()
+    /**
+     * List Branches (Admin Wise)
+     */
+    public function index(Request $request)
     {
-        $branches = Branch::with('bank')->latest()->paginate(10);
+        if (!$request->admin_id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'admin_id is required'
+            ], 400);
+        }
+
+        $branches = Branch::with('bank')
+            ->where('admin_id', $request->admin_id)
+            ->orderBy('id', 'DESC')
+            ->get();
 
         return response()->json([
             'status' => true,
-            'data' => $branches
+            'data'   => $branches
         ]);
     }
 
-    // ➕ Add new branch
+    /**
+     * Create Branch
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'bank_id' => 'required|exists:banks,id',
+        $validator = Validator::make($request->all(), [
+            'admin_id'       => 'required|integer',
+            'bank_id'        => 'required|exists:banks,id',
+            'cash_incharge'  => 'required|string|max:255',
             'branch_address' => 'required|string|max:255',
-            'is_active' => 'required|boolean',
+            'branch_email'   => 'required|string|max:255',
+            'is_active'      => 'required|boolean',
         ]);
 
-        $branch = Branch::create($request->only(['bank_id', 'branch_address', 'is_active']));
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $branch = Branch::create([
+            'admin_id'       => $request->admin_id,
+            'bank_id'        => $request->bank_id,
+            'cash_incharge'  => $request->cash_incharge,
+            'branch_address' => $request->branch_address,
+            'branch_email'   => $request->branch_email,
+            'is_active'      => $request->is_active,
+        ]);
 
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'Branch created successfully.',
-            'data' => $branch
+            'data'    => $branch
         ], 201);
     }
 
-    // 👁 Show single branch
+    /**
+     * Show Single Branch
+     */
     public function show($id)
     {
         $branch = Branch::with('bank')->find($id);
 
         if (!$branch) {
             return response()->json([
-                'status' => false,
-                'message' => 'Branch not found.'
+                'status'  => false,
+                'message' => 'Branch not found'
             ], 404);
         }
 
         return response()->json([
             'status' => true,
-            'data' => $branch
+            'data'   => $branch
         ]);
     }
 
-    // ✏️ Update branch
+    /**
+     * Update Branch
+     */
     public function update(Request $request, $id)
     {
         $branch = Branch::find($id);
 
         if (!$branch) {
             return response()->json([
-                'status' => false,
-                'message' => 'Branch not found.'
+                'status'  => false,
+                'message' => 'Branch not found'
             ], 404);
         }
 
-        $request->validate([
-            'bank_id' => 'required|exists:banks,id',
+        $validator = Validator::make($request->all(), [
+            'bank_id'        => 'required|exists:banks,id',
+            'cash_incharge'  => 'required|string|max:255',
             'branch_address' => 'required|string|max:255',
-            'is_active' => 'required|boolean',
+            'branch_email'   => 'required|string|max:255',
+            'is_active'      => 'required|boolean',
         ]);
 
-        $branch->update($request->only(['bank_id', 'branch_address', 'is_active']));
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $branch->update([
+            'bank_id'        => $request->bank_id,
+            'cash_incharge'  => $request->cash_incharge,
+            'branch_address' => $request->branch_address,
+            'branch_email'   => $request->branch_email,
+            'is_active'      => $request->is_active,
+        ]);
 
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'Branch updated successfully.',
-            'data' => $branch
+            'data'    => $branch
         ]);
     }
 
-    // ❌ Delete branch
+    /**
+     * Delete Branch
+     */
     public function destroy($id)
     {
         $branch = Branch::find($id);
 
         if (!$branch) {
             return response()->json([
-                'status' => false,
-                'message' => 'Branch not found.'
+                'status'  => false,
+                'message' => 'Branch not found'
             ], 404);
         }
 

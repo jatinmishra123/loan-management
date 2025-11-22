@@ -6,23 +6,18 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="card">
+
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="card-title mb-0">Add New Customer</h4>
-                <div>
-                    <label class="me-2 fw-semibold">Appraisal Type:</label>
-                    <select id="appraisalType" class="form-select form-select-sm d-inline-block w-auto">
-                        <option value="first" selected>First Appraisal</option>
-                        <option value="second">Second Appraisal</option>
-                    </select>
-                </div>
             </div>
 
             <div class="card-body">
                 <form action="{{ route('admin.customers.store') }}" method="POST">
                     @csrf
-                    
+
                     <h5 class="mb-3 text-primary">Personal Details</h5>
                     <div class="row">
+
                         {{-- Borrower Name --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Borrower Name</label>
@@ -52,6 +47,7 @@
 
                     <h5 class="mb-3 text-primary">Bank & Account Details</h5>
                     <div class="row">
+
                         {{-- Bank --}}
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Bank</label>
@@ -79,6 +75,7 @@
                     </div>
 
                     <div class="row">
+
                         {{-- Appraiser Account --}}
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Appraiser A/C Number</label>
@@ -99,6 +96,7 @@
                     </div>
 
                     <div class="row">
+
                         {{-- Date --}}
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Appraisal Date</label>
@@ -121,6 +119,7 @@
                     <hr class="my-3">
 
                     <div class="row">
+
                         {{-- Paid Status --}}
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Payment Status</label>
@@ -151,20 +150,7 @@
                             <label class="form-label">Customer Remarks</label>
                             <textarea class="form-control" name="customer_remarks" rows="3" placeholder="Enter any notes..."></textarea>
                         </div>
-                    </div>
 
-                    <div id="secondAppraisalFields" class="d-none p-3 mb-3 bg-light border rounded">
-                        <h6 class="text-secondary">Second Appraisal Details</h6>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Ledger Folio No</label>
-                                <input type="text" class="form-control" name="ledger_folio_no" placeholder="Enter ledger folio">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Gold Loan Alc No</label>
-                                <input type="text" class="form-control" name="gold_loan_alc_no" placeholder="Enter gold loan ALC">
-                            </div>
-                        </div>
                     </div>
 
                     <div class="d-flex justify-content-start gap-2">
@@ -173,20 +159,21 @@
                     </div>
 
                 </form>
-            </div> </div>
+            </div>
+
+        </div>
     </div>
 </div>
 
 {{-- SCRIPTS --}}
 <script>
-    // 1. Load Branches based on Bank Selection
+    // Load Branches based on Bank Selection
     document.getElementById('bankDropdown').addEventListener('change', function () {
         let bankId = this.value;
         let branchDropdown = document.getElementById('branchDropdown');
 
-        // Reset Dropdown
         branchDropdown.innerHTML = '<option>Loading...</option>';
-        document.getElementById('cash_incharge').value = ''; // Reset officer
+        document.getElementById('cash_incharge').value = '';
 
         if(bankId) {
             fetch(`/admin/branches-by-bank/${bankId}`)
@@ -194,7 +181,6 @@
                 .then(data => {
                     branchDropdown.innerHTML = '<option value="">Select Branch</option>';
                     data.forEach(branch => {
-                        // Store cash officer name in a data attribute
                         let option = document.createElement('option');
                         option.value = branch.id;
                         option.text = branch.branch_address;
@@ -211,26 +197,11 @@
         }
     });
 
-    // 2. Auto-fill Cash Officer from Branch Data
+    // Auto-fill Cash Officer
     document.getElementById('branchDropdown').addEventListener('change', function () {
         let selectedOption = this.options[this.selectedIndex];
         let cashOfficer = selectedOption.getAttribute('data-cash');
-        
-        if (cashOfficer) {
-            document.getElementById('cash_incharge').value = cashOfficer;
-        } else {
-            document.getElementById('cash_incharge').value = '';
-        }
-    });
-
-    // 3. Toggle Second Appraisal Fields
-    document.getElementById('appraisalType').addEventListener('change', function () {
-        const secondFields = document.getElementById('secondAppraisalFields');
-        if (this.value === 'second') {
-            secondFields.classList.remove('d-none');
-        } else {
-            secondFields.classList.add('d-none');
-        }
+        document.getElementById('cash_incharge').value = cashOfficer ?? '';
     });
 </script>
 @endsection

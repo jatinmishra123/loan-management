@@ -3,33 +3,63 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Bank;
 use Illuminate\Http\Request;
+use App\Models\Bank;
+use Illuminate\Support\Facades\Validator;
 
 class BankApiController extends Controller
 {
-    // 📋 List banks
-    public function index()
+    /**
+     * Show all banks (Admin Wise)
+     */
+    public function index(Request $request)
     {
-        $banks = Bank::latest()->paginate(10);
+        if (!$request->admin_id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'admin_id is required'
+            ], 400);
+        }
+
+        $banks = Bank::where('admin_id', $request->admin_id)
+                    ->orderBy('id', 'DESC')
+                    ->get();
 
         return response()->json([
             'status' => true,
-            'data' => $banks
+            'banks' => $banks
         ]);
     }
 
-    // ➕ Add new bank
+    /**
+     * Store new bank
+     */
     public function store(Request $request)
     {
-        $request->validate([
-            'bank' => 'required|string|max:255',
-            'address' => 'nullable|string|max:255',
-            'bank_code' => 'required|string|max:50|unique:banks,bank_code',
-            'is_active' => 'required|boolean',
+        $validator = Validator::make($request->all(), [
+            'admin_id'   => 'required|integer',
+            'bank'       => 'required|string|max:255',
+            'address'    => 'nullable|string|max:255',
+            'ifsc_code'  => 'nullable|string|max:255',
+            'bank_code'  => 'required|string|max:50|unique:banks,bank_code',
+            'is_active'  => 'required|boolean',
         ]);
 
-        $bank = Bank::create($request->all());
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $bank = Bank::create([
+            'admin_id'  => $request->admin_id,
+            'bank'      => $request->bank,
+            'address'   => $request->address,
+            'ifsc_code' => $request->ifsc_code,
+            'bank_code' => $request->bank_code,
+            'is_active' => $request->is_active,
+        ]);
 
         return response()->json([
             'status' => true,
@@ -38,7 +68,9 @@ class BankApiController extends Controller
         ], 201);
     }
 
-    // 👁 Show single bank
+    /**
+     * Show single bank
+     */
     public function show($id)
     {
         $bank = Bank::find($id);
@@ -46,7 +78,7 @@ class BankApiController extends Controller
         if (!$bank) {
             return response()->json([
                 'status' => false,
-                'message' => 'Bank not found.'
+                'message' => 'Bank not found'
             ], 404);
         }
 
@@ -56,7 +88,9 @@ class BankApiController extends Controller
         ]);
     }
 
-    // ✏️ Update bank
+    /**
+     * Update bank
+     */
     public function update(Request $request, $id)
     {
         $bank = Bank::find($id);
@@ -64,18 +98,33 @@ class BankApiController extends Controller
         if (!$bank) {
             return response()->json([
                 'status' => false,
-                'message' => 'Bank not found.'
+                'message' => 'Bank not found'
             ], 404);
         }
 
-        $request->validate([
-            'bank' => 'required|string|max:255',
-            'address' => 'nullable|string|max:255',
-            'bank_code' => 'required|string|max:50|unique:banks,bank_code,' . $bank->id,
-            'is_active' => 'required|boolean',
+        $validator = Validator::make($request->all(), [
+            'bank'       => 'required|string|max:255',
+            'address'    => 'nullable|string|max:255',
+            'ifsc_code'  => 'nullable|string|max:255',
+            'bank_code'  => 'required|string|max:50|unique:banks,bank_code,' . $id,
+            'is_active'  => 'required|boolean',
         ]);
 
-        $bank->update($request->all());
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Update Now
+        $bank->update([
+            'bank'      => $request->bank,
+            'address'   => $request->address,
+            'ifsc_code' => $request->ifsc_code,
+            'bank_code' => $request->bank_code,
+            'is_active' => $request->is_active,
+        ]);
 
         return response()->json([
             'status' => true,
@@ -84,7 +133,9 @@ class BankApiController extends Controller
         ]);
     }
 
-    // ❌ Delete bank
+    /**
+     * Delete bank
+     */
     public function destroy($id)
     {
         $bank = Bank::find($id);
@@ -92,7 +143,7 @@ class BankApiController extends Controller
         if (!$bank) {
             return response()->json([
                 'status' => false,
-                'message' => 'Bank not found.'
+                'message' => 'Bank not found'
             ], 404);
         }
 

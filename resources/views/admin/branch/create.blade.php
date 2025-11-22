@@ -1,93 +1,130 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Add Branch')
+@section('title', 'Add New Branch')
 
 @section('content')
-    <div class="row">
-        <div class="col-lg-10 offset-lg-1">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
-                    <h4 class="card-title mb-0">Add Branch</h4>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-14">
+
+            <div class="card border-0 shadow-lg rounded-4">
+                
+                {{-- Header --}}
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title mb-1 text-primary fw-bold">
+                                <i class="ri-git-branch-line align-middle me-1"></i> Add New Branch
+                            </h4>
+                            <p class="text-muted mb-0 small">Register a new branch under a bank.</p>
+                        </div>
+                        <a href="{{ route('admin.branch.index') }}" class="btn btn-sm btn-light border">
+                            <i class="ri-arrow-left-line align-middle me-1"></i> Back to List
+                        </a>
+                    </div>
                 </div>
 
-                <div class="card-body">
+                <div class="card-body p-4">
                     <form action="{{ route('admin.branch.store') }}" method="POST">
                         @csrf
 
-                        <div class="row">
-                            {{-- Left Column --}}
-                            <div class="col-md-6">
+                        <div class="row g-3">
 
-                                <!-- Bank -->
-                                <div class="mb-3">
-                                    <label class="form-label">Bank</label>
-                                    <select name="bank_id" class="form-select" required>
+                            {{-- Bank Selection --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Bank <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ri-bank-line"></i></span>
+                                    <select name="bank_id" class="form-select @error('bank_id') is-invalid @enderror" required>
                                         <option value="">Select Bank</option>
                                         @foreach($banks as $bank)
-                                            <option value="{{ $bank->id }}"
-                                                {{ old('bank_id') == $bank->id ? 'selected' : '' }}>
+                                            <option value="{{ $bank->id }}" {{ old('bank_id') == $bank->id ? 'selected' : '' }}>
                                                 {{ $bank->bank }}
                                             </option>
                                         @endforeach
                                     </select>
-
                                     @error('bank_id')
-                                        <small class="text-danger">{{ $message }}</small>
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-
-                                <!-- Cash Incharge -->
-                                <div class="mb-3">
-                                    <label class="form-label">Cash Incharge</label>
-                                    <input type="text" name="cash_incharge" class="form-control"
-                                           value="{{ old('cash_incharge') }}" required>
-
-                                    @error('cash_incharge')
-                                        <small class="text-danger">{{ $message }}</small>
-                                    @enderror
-                                </div>
-
                             </div>
 
-                            {{-- Right Column --}}
+                            {{-- Branch Email (New Field) --}}
                             <div class="col-md-6">
-
-                                <!-- Branch Address -->
-                                <div class="mb-3">
-                                    <label class="form-label">Branch Address</label>
-                                    <input type="text" name="branch_address" class="form-control"
-                                           value="{{ old('branch_address') }}" required>
-
-                                    @error('branch_address')
-                                        <small class="text-danger">{{ $message }}</small>
+                                <label class="form-label fw-semibold">Branch Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ri-mail-line"></i></span>
+                                    <input type="email" 
+                                           name="branch_email" 
+                                           class="form-control @error('branch_email') is-invalid @enderror"
+                                           value="{{ old('branch_email') }}" 
+                                           placeholder="e.g. branch@bank.com">
+                                    @error('branch_email')
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
 
-                                <!-- Status -->
-                                <div class="mb-3">
-                                    <label class="form-label">Status</label>
+                            {{-- Cash Incharge --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Cash Incharge <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ri-user-star-line"></i></span>
+                                    <input type="text" 
+                                           name="cash_incharge" 
+                                           class="form-control @error('cash_incharge') is-invalid @enderror"
+                                           value="{{ old('cash_incharge') }}" 
+                                           placeholder="Name of person in charge" 
+                                           required>
+                                    @error('cash_incharge')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            {{-- Status --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Status</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ri-toggle-line"></i></span>
                                     <select name="is_active" class="form-select">
                                         <option value="1" {{ old('is_active') == 1 ? 'selected' : '' }}>Active</option>
                                         <option value="0" {{ old('is_active') == 0 ? 'selected' : '' }}>Inactive</option>
                                     </select>
+                                </div>
+                            </div>
 
-                                    @error('is_active')
-                                        <small class="text-danger">{{ $message }}</small>
+                            {{-- Branch Address --}}
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Branch Address <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="ri-map-pin-line"></i></span>
+                                    <textarea name="branch_address" 
+                                              class="form-control @error('branch_address') is-invalid @enderror" 
+                                              rows="2" 
+                                              placeholder="Enter full branch address" 
+                                              required>{{ old('branch_address') }}</textarea>
+                                    @error('branch_address')
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-
                             </div>
+
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="submit" class="btn btn-success">Save Branch</button>
-                            <a href="{{ route('admin.branch.index') }}" class="btn btn-light">Cancel</a>
+                        {{-- Buttons --}}
+                        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                            <a href="{{ route('admin.branch.index') }}" class="btn btn-light px-4">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="ri-save-line align-middle me-1"></i> Save Branch
+                            </button>
                         </div>
 
                     </form>
                 </div>
-
             </div>
+
         </div>
     </div>
+</div>
 @endsection

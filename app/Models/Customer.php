@@ -19,23 +19,21 @@ class Customer extends Model
         'brauser_name',
         'ralative_name',
         'address',
-        'alter_address',            // ✅ Added (from your View)
+        'alter_address',
         'date',
         'bank_id',
         'branch_id',
         'cash_incharge',
-        'cash_incharge_additional', // ✅ Added (from your View)
+        'cash_incharge_additional',
         'account_number',
         'loan_number',
         'saving_number',
         'ladger_number',
-        'ledger_folio_no',
-        'gold_loan_alc_no',
-        'tenure_days',              // ✅ Added (from your View)
-        'paid',                     // ✅ Added (from your View)
-        'customer_remarks',         // ✅ Added (from your View)
+        'tenure_days',
+        'paid',
+        'customer_remarks',
         'is_active',
-        'password',                 // Optional: Only if customers login
+        'password',  // only if you use login
     ];
 
     /**
@@ -74,27 +72,27 @@ class Customer extends Model
     |--------------------------------------------------------------------------
     */
 
-    // ✅ Customer belongs to a Bank
+    // Customer belongs to a Bank
     public function bank()
     {
         return $this->belongsTo(Bank::class);
     }
 
-    // ✅ Customer belongs to a Branch
+    // Customer belongs to a Branch
     public function branch()
     {
         return $this->belongsTo(Branch::class);
     }
 
-    // ✅ Customer has many Gold Items
-    public function goldItems()
-    {
-        return $this->hasMany(GoldItem::class, 'customer_id');
-    }
-
-    // ✅ Customer belongs to an Admin (User)
+    // Customer belongs to an Admin (User)
     public function admin()
     {
         return $this->belongsTo(Admin::class, 'admin_id', 'id');
+    }
+
+    // Gold items (if you need)
+    public function goldItems()
+    {
+        return $this->hasMany(GoldItem::class, 'customer_id');
     }
 }

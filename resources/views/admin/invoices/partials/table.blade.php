@@ -6,7 +6,7 @@
             {{ ($invoices->currentPage() - 1) * $invoices->perPage() + $loop->iteration }}
         </td>
 
-        {{-- Invoice Number --}}
+        {{-- Invoice Number (Used for JS Delete prompt) --}}
         <td class="fw-bold text-dark">{{ $invoice->invoice_no }}</td>
 
         {{-- Customer --}}
@@ -25,7 +25,7 @@
             {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d M, Y') }}
         </td>
 
-        {{-- Status --}}
+        {{-- Status (Assuming status logic is correct) --}}
         <td class="text-center">
             @php
                 $status = strtolower($invoice->status ?? 'pending');
@@ -62,31 +62,31 @@
 
         {{-- Actions --}}
         <td class="text-center">
-            <div class="btn-group btn-group-sm">
+            <div class="btn-group **btn-group-sm**">
 
                 {{-- View --}}
                 <a href="{{ route('admin.invoices.show', $invoice->id) }}" 
-                   class="btn btn-outline-secondary" title="View">
+                   class="btn **btn-sm** btn-outline-secondary" title="View">
                     <i class="ri-eye-line"></i>
                 </a>
 
                 {{-- Edit --}}
                 <a href="{{ route('admin.invoices.edit', $invoice->id) }}" 
-                   class="btn btn-outline-primary" title="Edit">
+                   class="btn **btn-sm** btn-outline-primary" title="Edit">
                     <i class="ri-edit-line"></i>
                 </a>
 
                 {{-- Download --}}
                 <a href="{{ route('admin.invoices.download', $invoice->id) }}" 
-                   class="btn btn-outline-success" title="Download PDF">
+                   class="btn **btn-sm** btn-outline-success" title="Download PDF">
                     <i class="ri-download-line"></i>
                 </a>
 
-                {{-- Delete --}}
+                {{-- Delete (Crucial for JS) --}}
                 <button type="button"
-                        class="btn btn-outline-danger delete-invoice-btn"
+                        class="btn **btn-sm** btn-outline-danger delete-invoice-btn"
                         data-id="{{ $invoice->id }}"
-                        data-name="{{ $invoice->invoice_no }}"
+                        data-invoice-no="{{ $invoice->invoice_no }}"
                         title="Delete">
                     <i class="ri-delete-bin-line"></i>
                 </button>
@@ -98,7 +98,7 @@
 
 @empty
 
-    <tr>
+    <tr class="no-result">
         <td colspan="10" class="text-center py-5">
             <div class="d-flex flex-column align-items-center text-muted">
                 <i class="ri-inbox-line fs-2 mb-2"></i>

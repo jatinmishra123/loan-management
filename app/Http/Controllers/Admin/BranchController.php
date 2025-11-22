@@ -43,6 +43,8 @@ class BranchController extends Controller
             'bank_id'        => 'required|exists:banks,id',
             'cash_incharge'  => 'required|string|max:255',
             'branch_address' => 'required|string|max:255',
+            'branch_email' => 'required|string|max:255',
+
             'is_active'      => 'required|boolean',
         ]);
 
@@ -51,6 +53,8 @@ class BranchController extends Controller
             'bank_id'        => $request->bank_id,
             'cash_incharge'  => $request->cash_incharge,
             'branch_address' => $request->branch_address,
+            'branch_email' => $request->branch_email,
+
             'is_active'      => $request->is_active,
         ]);
 
@@ -88,14 +92,17 @@ class BranchController extends Controller
             'bank_id'        => 'required|exists:banks,id',
             'cash_incharge'  => 'required|string|max:255',
             'branch_address' => 'required|string|max:255',
+            'branch_email' => 'required|string|max:255',
+
             'is_active'      => 'required|boolean',
         ]);
-
         $branch->update([
             'admin_id'       => auth()->guard('admin')->id(),
             'bank_id'        => $request->bank_id,
             'cash_incharge'  => $request->cash_incharge,
             'branch_address' => $request->branch_address,
+            'branch_email' => $request->branch_email,
+
             'is_active'      => $request->is_active,
         ]);
 

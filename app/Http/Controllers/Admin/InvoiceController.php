@@ -22,7 +22,7 @@ class InvoiceController extends Controller
             ->where('admin_id', $adminId)
             ->latest();
 
-        // 🔍 Search Filter
+        // 🔍 Search Filter (Handles Invoice No, Bank Name, Customer Name, and Phone)
         if ($request->filled('search')) {
             $search = $request->search;
 
@@ -30,12 +30,13 @@ class InvoiceController extends Controller
                 $q->where('invoice_no', 'like', "%$search%")
                   ->orWhere('bank_name', 'like', "%$search%")
                   ->orWhereHas('customer', function ($c) use ($search) {
-                      $c->where('brauser_name', 'like', "%$search%");
+                      $c->where('brauser_name', 'like', "%$search%")
+                        ->orWhere('phone', 'like', "%$search%");
                   });
             });
         }
 
-        // Filter by customer dropdown
+        // Filter by customer dropdown (Customer ID)
         if ($request->filled('customer')) {
             $query->where('customer_id', $request->customer);
         }
@@ -45,9 +46,10 @@ class InvoiceController extends Controller
         // Admin-wise customers dropdown
         $customers = Customer::where('admin_id', $adminId)
             ->select('id', 'brauser_name')
+            ->orderBy('brauser_name')
             ->get();
 
-        // AJAX Response
+        // AJAX Response for Search/Pagination/Filter
         if ($request->ajax()) {
             return response()->json([
                 'table_html' => view('admin.invoices.partials.table', compact('invoices'))->render(),
@@ -66,17 +68,13 @@ class InvoiceController extends Controller
         $adminId = auth()->guard('admin')->id();
 
         $customers = Customer::where('admin_id', $adminId)
-            ->select('id', 'brauser_name')
+            ->select('id', 'brauser_name', 'phone')
             ->get();
 
-        // Generate invoice number
+        // Generate invoice number logic (Safe way: relies on global ID increment)
         $prefix = 'VSJ/SBI/DAR/';
         $datePart = now()->format('ymd');
-
-        $lastInvoice = Invoice::where('admin_id', $adminId)
-            ->latest('id')
-            ->first();
-
+        $lastInvoice = Invoice::latest('id')->first();
         $nextId = $lastInvoice ? $lastInvoice->id + 1 : 1;
 
         $invoiceNo = $prefix . $datePart . '-' . $nextId;
@@ -99,7 +97,8 @@ class InvoiceController extends Controller
             'total_amount'    => 'required|numeric|min:0',
             'amount_in_words' => 'nullable|string|max:255',
             'round_off'       => 'nullable|numeric',
-            'company_pan'     => 'nullable|string|max:10',
+            'unit'            => 'nullable|numeric', // Added 'unit' validation based on create view
+            'company_pan'     => 'nullable|string|max:20',
             'bank_account_no' => 'nullable|string|max:50',
             'bank_name'       => 'nullable|string|max:100',
             'ifsc_code'       => 'nullable|string|max:20',
@@ -120,11 +119,10 @@ class InvoiceController extends Controller
     public function edit($id)
     {
         $adminId = auth()->guard('admin')->id();
-
         $invoice = Invoice::where('admin_id', $adminId)->findOrFail($id);
-
+        
         $customers = Customer::where('admin_id', $adminId)
-            ->select('id', 'brauser_name')
+            ->select('id', 'brauser_name', 'phone')
             ->get();
 
         return view('admin.invoices.edit', compact('invoice', 'customers'));
@@ -136,7 +134,6 @@ class InvoiceController extends Controller
     public function update(Request $request, $id)
     {
         $adminId = auth()->guard('admin')->id();
-
         $invoice = Invoice::where('admin_id', $adminId)->findOrFail($id);
 
         $request->validate([
@@ -146,7 +143,8 @@ class InvoiceController extends Controller
             'total_amount'    => 'required|numeric|min:0',
             'amount_in_words' => 'nullable|string|max:255',
             'round_off'       => 'nullable|numeric',
-            'company_pan'     => 'nullable|string|max:10',
+            'unit'            => 'nullable|numeric', // Added 'unit' validation
+            'company_pan'     => 'nullable|string|max:20',
             'bank_account_no' => 'nullable|string|max:50',
             'bank_name'       => 'nullable|string|max:100',
             'ifsc_code'       => 'nullable|string|max:20',
@@ -167,9 +165,7 @@ class InvoiceController extends Controller
     public function destroy($id)
     {
         $adminId = auth()->guard('admin')->id();
-
         $invoice = Invoice::where('admin_id', $adminId)->findOrFail($id);
-
         $invoice->delete();
 
         return response()->json([
@@ -184,12 +180,11 @@ class InvoiceController extends Controller
     public function show($id)
     {
         $adminId = auth()->guard('admin')->id();
-
         $invoice = Invoice::where('admin_id', $adminId)
             ->with('customer')
             ->findOrFail($id);
 
-        $admin = auth('admin')->user();
+        $admin = auth()->guard('admin')->user();
 
         return view('admin.invoices.show', compact('invoice', 'admin'));
     }
@@ -200,13 +195,11 @@ class InvoiceController extends Controller
     public function downloadPDF($id)
     {
         $adminId = auth()->guard('admin')->id();
-
         $invoice = Invoice::where('admin_id', $adminId)
             ->with('customer')
             ->findOrFail($id);
 
-        $admin = auth('admin')->user();
-
+        $admin = auth()->guard('admin')->user();
         $fileName = 'Invoice_' . Str::slug($invoice->invoice_no, '_') . '.pdf';
 
         $pdf = Pdf::loadView('admin.invoices.pdf', compact('invoice', 'admin'))

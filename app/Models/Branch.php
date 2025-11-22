@@ -19,6 +19,7 @@ class Branch extends Model
         'bank_id',
         'cash_incharge',
         'branch_address',
+        'branch_email',
         'is_active',
     ];
 

@@ -67,18 +67,18 @@
 <body>
 
     <div class="invoice-box">
-<h3 class="text-center" style="font-family: Georgia, serif;">
+<h1 class="text-center" style="font-family: Georgia, serif;">
     {{ $admin->name ?? 'Admin Name Not Set' }}
-</h3>
+</h1>
 
-<p class="text-center small">
+<h3 class="text-center small">
     {{ $admin->address ?? 'Admin Address Not Set' }}
-</p>
+</h3>
 
 
         <hr style="border: 1px solid #000;">
 
-        <h4 class="text-center" style="font-family: serif; margin-top: 5px;">INVOICE</h4>
+        <h2 class="text-center" style="font-family: serif; margin-top: 5px;">INVOICE</h2>
 
      <table>
     <tr>

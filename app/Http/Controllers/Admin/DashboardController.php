@@ -7,7 +7,9 @@ use App\Models\Bank;
 use App\Models\Branch;
 use App\Models\Agent;
 use App\Models\GoldPrice;
-use App\Models\AppraisalRecord;   // ⭐ ADD THIS
+use App\Models\AppraisalRecord;
+use App\Models\Customer;
+use App\Models\FinalAppraisalCertificate; // 👈 ADDED: Second Appraisal Certificate Model
 
 class DashboardController extends Controller
 {
@@ -15,7 +17,7 @@ class DashboardController extends Controller
     {
         $adminId = auth('admin')->id();
 
-        // 📊 Dashboard Stats
+        // 1. 📊 Dashboard Stats
         $stats = [
             'total_banks'      => Bank::where('admin_id', $adminId)->count(),
             'total_branches'   => Branch::where('admin_id', $adminId)->count(),
@@ -26,21 +28,27 @@ class DashboardController extends Controller
             'active_agents'    => Agent::where('admin_id', $adminId)->where('is_active', 1)->count(),
         ];
 
-        // 🏦 Recent Branches
+        // 2. 🏦 Recent Branches
         $recentBranches = Branch::with('bank')
             ->where('admin_id', $adminId)
             ->latest()
             ->limit(10)
             ->get();
 
-        // 👨‍💼 Recent Agents
+        // 3. 👨‍💼 Recent Agents
         $recentAgents = Agent::with(['bank', 'branch'])
             ->where('admin_id', $adminId)
             ->latest()
             ->limit(10)
             ->get();
 
-        // 🟡 Gold Price (global)
+        // 4. 👥 Recent Customers
+        $recentCustomers = Customer::where('admin_id', $adminId)
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        // 5. 🟡 Gold Price (global)
         $latestPrice = GoldPrice::latest()->first();
 
         if (!$latestPrice) {
@@ -50,11 +58,17 @@ class DashboardController extends Controller
             ];
         }
 
-        // 📄 ⭐ Recent Appraisal Records (Admin-wise)
+        // 6. 📄 FIRST Appraisal History (Existing Logic - AppraisalRecord)
         $appraisalHistory = AppraisalRecord::with('customer')
             ->whereHas('customer', function ($q) use ($adminId) {
                 $q->where('admin_id', $adminId);
             })
+            ->latest()
+            ->limit(10)
+            ->get();
+            
+        // 7. 📄 SECOND Appraisal History (New Logic - FinalAppraisalCertificate)
+        $secondAppraisalHistory = FinalAppraisalCertificate::where('admin_id', $adminId)
             ->latest()
             ->limit(10)
             ->get();
@@ -65,7 +79,9 @@ class DashboardController extends Controller
             'recentBranches',
             'recentAgents',
             'latestPrice',
-            'appraisalHistory'   // ⭐ ADD THIS TO VIEW
+            'appraisalHistory',
+            'recentCustomers',
+            'secondAppraisalHistory' // 👈 ADDED to pass to the view
         ));
     }
 }
